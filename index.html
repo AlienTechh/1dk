@@ -26,7 +26,7 @@
         .status-bar { 
             position: absolute; top: 0; width: 100%; height: 35px; 
             display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; box-sizing: border-box; color: white; font-size: 11px; z-index: 1000; 
+            padding: 0 20px; box-sizing: border-box; color: white; font-size: 11px; z-index: 4500; 
         }
         .battery-section { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
@@ -51,7 +51,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            display: none; /* Changed from flex to none */
+            display: none; 
             justify-content: center;
             align-items: center;
             font-size: 32px;
@@ -80,7 +80,8 @@
         .header { padding: 60px 20px 10px; font-weight: 800; font-size: 26px; color: #000; }
         .item { padding: 15px 18px; font-size: 16px; border-bottom: 0.5px solid #e5e5ea; cursor: pointer; color: #000; display: flex; justify-content: space-between; background: #fff; align-items: center; }
         
-        .home-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100px; height: 5px; background: white; border-radius: 10px; z-index: 4500; cursor: pointer; }
+        /* Home Bar Z-Index lowered to hide behind Black Overlay (4000) */
+        .home-bar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 100px; height: 5px; background: white; border-radius: 10px; z-index: 3500; cursor: pointer; }
         
         .is-unlocked .wallpaper { transform: scale(1); }
         .is-unlocked .drag-btn { opacity: 1; transform: scale(1); }
@@ -137,6 +138,7 @@
             <div id="p3" class="page" style="display:none;"><div class="header">Wallpaper</div><div class="item" onclick="document.getElementById('file-input').click()">Choose Wallpaper +</div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
             <div id="p4" class="page" style="display:none;"><div class="header">About Phone</div><div style="padding:40px; text-align:center;"><h1 style="color:#000;">FakeOS 1.0</h1><p style="color:#666;">POCO X6 Pro</p></div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
             <div id="p5" class="page" style="display:none;"><div class="header">Icons</div><div class="item" onclick="changeIconStyle('glassy')">Glassy</div><div class="item" onclick="changeIconStyle('normal')">Normal</div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
+            
             <div id="p6" class="page" style="display:none;">
                 <div class="header">Screen Lock</div>
                 <div class="item">Fingerprint 
@@ -156,7 +158,6 @@
         const phone = document.getElementById('phone'), blackOverlay = document.getElementById('blackOverlay'), wallpaper = document.getElementById('mainWallpaper');
         let isPowerOn = true, isDragging = false;
 
-        // Toggle Fingerprint Visibility
         function setFingerprint(visible) {
             document.getElementById('fp-icon').style.display = visible ? 'flex' : 'none';
         }
