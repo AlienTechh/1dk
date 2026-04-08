@@ -53,7 +53,7 @@
 
         .wallpaper { position: absolute; width: 100%; height: 100%; background: #1a3a5a url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover; transition: transform 0.8s var(--ios-spring), filter 0.5s; z-index: 1; transform: scale(1.1); }
         
-        .lockscreen { position: absolute; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; padding-top: 80px; color: white; transition: transform 0.7s var(--ios-spring), opacity 0.4s; pointer-events: none; }
+        .lockscreen { position: absolute; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; padding-top: 80px; color: white; transition: transform 0.7s var(--ios-spring), opacity 0.4s; }
         .lock-time { font-size: 64px; font-weight: 200; }
 
         .pin-pad { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); z-index: 3100; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
@@ -63,7 +63,7 @@
         .num-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .num-btn { width: 65px; height: 65px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; justify-content: center; align-items: center; font-size: 28px; cursor: pointer; }
 
-        .fingerprint-scanner { margin-top: auto; margin-bottom: 100px; width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 32px; animation: pulse 2s infinite; pointer-events: auto; }
+        .fingerprint-scanner { margin-top: auto; margin-bottom: 100px; width: 70px; height: 70px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 32px; animation: pulse 2s infinite; pointer-events: auto; cursor: pointer; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); } 70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
 
@@ -81,10 +81,9 @@
         .home-bar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 120px; height: 5px; background: rgba(255,255,255,0.8); border-radius: 10px; z-index: 3500; cursor: pointer; }
 
         /* MULTITASKING / RECENTS STYLES */
-        .multitasking-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 80; display: none; }
-        .recents-view .multitasking-overlay { display: block; }
+        .multitasking-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 80; display: none; pointer-events: none; }
+        .recents-view .multitasking-overlay { display: block; pointer-events: auto; }
 
-        /* Hide icons in multitasking */
         .recents-view .drag-btn { opacity: 0 !important; pointer-events: none !important; }
 
         .recents-view .app { 
@@ -111,8 +110,7 @@
 
         .is-unlocked .wallpaper { transform: scale(1); }
         .is-unlocked .drag-btn { opacity: 1; transform: scale(1); }
-        .is-unlocked .lockscreen { transform: translateY(-100%); opacity: 0; }
-        .is-unlocked .lockscreen * { pointer-events: none; }
+        .is-unlocked .lockscreen { transform: translateY(-100%); opacity: 0; pointer-events: none; }
         .open .app { transform: scale(1); opacity: 1; pointer-events: auto; }
         .open .wallpaper { filter: blur(25px); transform: scale(1.15) !important; }
     </style>
@@ -149,7 +147,7 @@
         <div class="lockscreen" id="lockView">
             <div class="lock-time" id="clock">12:00</div>
             <div style="margin-top: 5px; opacity: 0.7; font-size: 14px;">Hold Home Bar to Unlock</div>
-            <div class="fingerprint-scanner" id="fp-icon" onclick="phone.classList.add('is-unlocked')">☝️</div>
+            <div class="fingerprint-scanner" id="fp-icon" onclick="unlockPhone()">☝️</div>
         </div>
 
         <div class="pin-pad" id="pinPad">
@@ -212,10 +210,10 @@
         let homeTimer;
 
         function handleHomeStart() {
-            homeTimer = setTimeout(() => {
-                if (isPowerOn && phone.classList.contains('is-unlocked') && !ccPanel.classList.contains('cc-open')) {
+            // Only allow multitasking if the phone is actually unlocked
+            if (isPowerOn && phone.classList.contains('is-unlocked') && !ccPanel.classList.contains('cc-open')) {
+                homeTimer = setTimeout(() => {
                     phone.classList.add('recents-view');
-                    // Toggle message visibility
                     const msg = document.getElementById('no-apps-msg');
                     const trigger = document.getElementById('cardTrigger');
                     if(!phone.classList.contains('open')) {
@@ -225,14 +223,22 @@
                         msg.style.display = 'none';
                         trigger.style.display = 'block';
                     }
-                }
-            }, 600);
+                }, 600);
+            }
         }
 
         function handleHomeEnd() {
             clearTimeout(homeTimer);
             if (!phone.classList.contains('recents-view')) {
                 handleHomeBar();
+            }
+        }
+
+        function unlockPhone() {
+            if(activePin) {
+                document.getElementById('pinPad').style.display = 'flex';
+            } else {
+                phone.classList.add('is-unlocked');
             }
         }
 
@@ -302,8 +308,7 @@
                 return;
             }
             if (isPowerOn && !phone.classList.contains('is-unlocked')) {
-                if(activePin) document.getElementById('pinPad').style.display = 'flex';
-                else phone.classList.add('is-unlocked');
+                unlockPhone();
             } else { phone.classList.remove('open'); } 
         }
 
@@ -340,4 +345,22 @@
         function setSpd(t) { document.documentElement.style.setProperty('--spd', t); }
         function changeWallpaper(e) { 
             const r = new FileReader(); 
-            r.onload = (ev
+            r.onload = (ev) => { wallpaper.style.backgroundImage = `url('${ev.target.result}')`; }; 
+            r.readAsDataURL(e.target.files[0]); 
+        }
+        function changeIconStyle(s) { 
+            document.querySelectorAll('.drag-btn').forEach(b => {
+                if(s === 'glassy') b.className = 'drag-btn icon-glassy';
+                else b.className = 'drag-btn ' + (b.id==='settingsBtn'?'icon-normal-settings':'icon-normal-cc');
+            });
+        }
+        function updateTime() { 
+            const now = new Date(); 
+            const t = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0'); 
+            document.getElementById('clock').innerText = t; 
+            document.getElementById('st-time').innerText = t; 
+        }
+        setInterval(updateTime, 1000); updateTime();
+    </script>
+</body>
+</html>
