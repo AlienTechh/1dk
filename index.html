@@ -23,7 +23,6 @@
         .brightness-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; pointer-events: none; z-index: 3800; opacity: calc(1 - var(--bright)); }
         .punch-hole { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px; background: #000; border-radius: 50%; z-index: 3900; border: 1px solid #1a1a1a; }
         
-        /* Status Bar Z-index lowered to hide when blackOverlay (4000) is on */
         .status-bar { 
             position: absolute; top: 0; width: 100%; height: 35px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -42,7 +41,6 @@
         .lockscreen { position: absolute; width: 100%; height: 100%; z-index: 500; display: flex; flex-direction: column; align-items: center; padding-top: 70px; color: white; background: rgba(0,0,0,0.1); transition: transform 0.6s var(--ios-spring), opacity 0.4s; }
         .lock-time { font-size: 58px; font-weight: 200; }
 
-        /* PIN Pad UI */
         .pin-pad { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(25px); z-index: 600; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .pin-dots { display: flex; gap: 15px; margin-bottom: 30px; }
         .dot { width: 12px; height: 12px; border: 1.5px solid white; border-radius: 50%; }
@@ -142,8 +140,13 @@
             <div style="margin-top: 30px; color: #007aff; cursor: pointer;" onclick="closePinPad()">Back</div>
         </div>
 
-        <div class="drag-btn icon-normal-settings" id="settingsBtn" onmousedown="setupDrag(event, this, 'settings')">⚙️</div>
-        <div class="drag-btn icon-normal-cc" id="ccIconBtn" onmousedown="setupDrag(event, this, 'cc')">🎛️</div>
+        <div class="drag-btn icon-normal-settings" id="settingsBtn" 
+             onmousedown="setupDrag(event, this, 'settings')" 
+             ontouchstart="setupDrag(event, this, 'settings')">⚙️</div>
+             
+        <div class="drag-btn icon-normal-cc" id="ccIconBtn" 
+             onmousedown="setupDrag(event, this, 'cc')" 
+             ontouchstart="setupDrag(event, this, 'cc')">🎛️</div>
 
         <input type="file" id="file-input" hidden accept="image/*" onchange="changeWallpaper(event)">
 
@@ -160,15 +163,9 @@
             <div id="p3" class="page" style="display:none;"><div class="header">Wallpaper</div><div class="item" onclick="document.getElementById('file-input').click()">Choose Wallpaper +</div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
             <div id="p4" class="page" style="display:none;"><div class="header">About Phone</div><div style="padding:40px; text-align:center;"><h1 style="color:#000;">FakeOS 1.0</h1><p style="color:#666;">POCO X6 Pro</p></div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
             <div id="p5" class="page" style="display:none;"><div class="header">Icons</div><div class="item" onclick="changeIconStyle('glassy')">Glassy</div><div class="item" onclick="changeIconStyle('normal')">Normal</div><div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div></div>
-            
             <div id="p6" class="page" style="display:none;">
                 <div class="header">Screen Lock</div>
-                <div class="item">Fingerprint 
-                    <div style="display:flex; gap: 10px;">
-                        <span onclick="setFingerprint(true)" style="color:#34c759; font-weight: bold;">ON</span>
-                        <span onclick="setFingerprint(false)" style="color:#ff3b30; font-weight: bold;">OFF</span>
-                    </div>
-                </div>
+                <div class="item">Fingerprint <div style="display:flex; gap: 10px;"><span onclick="setFingerprint(true)" style="color:#34c759; font-weight: bold;">ON</span><span onclick="setFingerprint(false)" style="color:#ff3b30; font-weight: bold;">OFF</span></div></div>
                 <div class="item" id="createPinBtn" onclick="createPin()">Create a PIN <span style="color:#007aff;">+</span></div>
                 <div class="item" id="turnOffPinBtn" style="display:none;" onclick="turnOffPin()">Turn off PIN <span style="color:#ff3b30;">✕</span></div>
                 <div class="item" style="color:#007aff;" onclick="showPage(1)">Back</div>
@@ -180,11 +177,8 @@
 
     <script>
         const phone = document.getElementById('phone'), blackOverlay = document.getElementById('blackOverlay'), wallpaper = document.getElementById('mainWallpaper');
-        let isPowerOn = true, isDragging = false;
-        let activePin = null;
-        let currentPinInput = "";
+        let isPowerOn = true, isDragging = false, activePin = null, currentPinInput = "";
 
-        // PIN Management
         function createPin() {
             let p = prompt("Enter a 4-digit PIN:");
             if(p && p.length === 4 && !isNaN(p)) {
@@ -192,118 +186,86 @@
                 document.getElementById('createPinBtn').style.display = 'none';
                 document.getElementById('turnOffPinBtn').style.display = 'flex';
                 alert("PIN set successfully");
-            } else {
-                alert("Invalid PIN. Please enter 4 numbers.");
             }
         }
-
-        function turnOffPin() {
-            activePin = null;
-            document.getElementById('createPinBtn').style.display = 'flex';
-            document.getElementById('turnOffPinBtn').style.display = 'none';
-        }
-
+        function turnOffPin() { activePin = null; document.getElementById('createPinBtn').style.display = 'flex'; document.getElementById('turnOffPinBtn').style.display = 'none'; }
         function inputPin(num) {
             if(currentPinInput.length < 4) {
-                currentPinInput += num;
-                updatePinDots();
+                currentPinInput += num; updatePinDots();
                 if(currentPinInput.length === 4) {
-                    if(currentPinInput === activePin) {
-                        phone.classList.add('is-unlocked');
-                        closePinPad();
-                    } else {
+                    if(currentPinInput === activePin) { phone.classList.add('is-unlocked'); closePinPad(); }
+                    else {
                         const status = document.getElementById('pinStatus');
-                        status.innerText = "Wrong PIN";
-                        status.style.color = "#ff3b30";
-                        setTimeout(() => {
-                            status.innerText = "Enter PIN";
-                            status.style.color = "white";
-                            currentPinInput = "";
-                            updatePinDots();
-                        }, 2000);
+                        status.innerText = "Wrong PIN"; status.style.color = "#ff3b30";
+                        setTimeout(() => { status.innerText = "Enter PIN"; status.style.color = "white"; currentPinInput = ""; updatePinDots(); }, 2000);
                     }
                 }
             }
         }
-
-        function updatePinDots() {
-            const dots = document.querySelectorAll('#pinDots .dot');
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i < currentPinInput.length);
-            });
-        }
-
-        function closePinPad() {
-            document.getElementById('pinPad').style.display = 'none';
-            currentPinInput = "";
-            updatePinDots();
-        }
-
-        function setFingerprint(visible) {
-            document.getElementById('fp-icon').style.display = visible ? 'flex' : 'none';
-        }
+        function updatePinDots() { const dots = document.querySelectorAll('#pinDots .dot'); dots.forEach((dot, i) => dot.classList.toggle('active', i < currentPinInput.length)); }
+        function closePinPad() { document.getElementById('pinPad').style.display = 'none'; currentPinInput = ""; updatePinDots(); }
+        function setFingerprint(visible) { document.getElementById('fp-icon').style.display = visible ? 'flex' : 'none'; }
 
         async function updateBattery() {
             try {
                 const battery = await navigator.getBattery();
-                const level = Math.floor(battery.level * 100);
-                document.getElementById('battery-level').innerText = level + "%";
-                battery.addEventListener('levelchange', () => {
-                    document.getElementById('battery-level').innerText = Math.floor(battery.level * 100) + "%";
-                });
-            } catch (e) {
-                document.getElementById('battery-level').innerText = "100%";
-            }
+                document.getElementById('battery-level').innerText = Math.floor(battery.level * 100) + "%";
+                battery.addEventListener('levelchange', () => { document.getElementById('battery-level').innerText = Math.floor(battery.level * 100) + "%"; });
+            } catch (e) { document.getElementById('battery-level').innerText = "100%"; }
         }
         updateBattery();
 
         function handleDoubleTap(e) {
             if (e.target.classList.contains('drag-btn') || e.target.classList.contains('fingerprint-scanner') || e.target.classList.contains('num-btn')) return;
-            if (!isPowerOn) { 
-                blackOverlay.classList.remove('screen-is-off'); 
-                isPowerOn = true; 
-            } else if (!phone.classList.contains('open') && phone.classList.contains('is-unlocked')) { 
-                blackOverlay.classList.add('screen-is-off'); 
-                phone.classList.remove('is-unlocked'); 
-                isPowerOn = false; 
-                toggleCC(false); 
-                closePinPad();
+            if (!isPowerOn) { blackOverlay.classList.remove('screen-is-off'); isPowerOn = true; } 
+            else if (!phone.classList.contains('open') && phone.classList.contains('is-unlocked')) { 
+                blackOverlay.classList.add('screen-is-off'); phone.classList.remove('is-unlocked'); isPowerOn = false; toggleCC(false); closePinPad();
             }
         }
 
         function handleHomeBar() { 
             if (isPowerOn && !phone.classList.contains('is-unlocked')) {
-                if(activePin) {
-                    document.getElementById('pinPad').style.display = 'flex';
-                } else {
-                    phone.classList.add('is-unlocked');
-                }
-            } else { 
-                phone.classList.remove('open'); 
-                toggleCC(false); 
-            } 
+                if(activePin) document.getElementById('pinPad').style.display = 'flex';
+                else phone.classList.add('is-unlocked');
+            } else { phone.classList.remove('open'); toggleCC(false); } 
         }
 
+        // MOBILE COMPATIBLE DRAG LOGIC
         function setupDrag(e, el, type) {
             if (!phone.classList.contains('is-unlocked') || phone.classList.contains('open')) return;
             isDragging = false;
-            let sX = e.clientX, sY = e.clientY, iX = el.offsetLeft, iY = el.offsetTop;
+            
+            // Determine if touch or mouse
+            const isTouch = e.type === 'touchstart';
+            let startX = isTouch ? e.touches[0].clientX : e.clientX;
+            let startY = isTouch ? e.touches[0].clientY : e.clientY;
+            let initX = el.offsetLeft;
+            let initY = el.offsetTop;
+
             const move = (ev) => {
                 isDragging = true;
-                el.style.left = Math.max(10, Math.min(iX + (ev.clientX - sX), 210)) + 'px';
-                el.style.top = Math.max(40, Math.min(iY + (ev.clientY - sY), 480)) + 'px';
-                if(type === 'settings') document.getElementById('settingsApp').style.transformOrigin = (parseInt(el.style.left)+30)+"px "+(parseInt(el.style.top)+30)+"px";
+                const currentX = isTouch ? ev.touches[0].clientX : ev.clientX;
+                const currentY = isTouch ? ev.touches[0].clientY : ev.clientY;
+                
+                el.style.left = Math.max(10, Math.min(initX + (currentX - startX), 210)) + 'px';
+                el.style.top = Math.max(40, Math.min(initY + (currentY - startY), 480)) + 'px';
+                
+                if(type === 'settings') {
+                    document.getElementById('settingsApp').style.transformOrigin = (parseInt(el.style.left)+30)+"px "+(parseInt(el.style.top)+30)+"px";
+                }
             };
+
             const stop = () => { 
-                document.removeEventListener('mousemove', move); 
-                document.removeEventListener('mouseup', stop); 
+                document.removeEventListener(isTouch ? 'touchmove' : 'mousemove', move); 
+                document.removeEventListener(isTouch ? 'touchend' : 'mouseup', stop); 
                 if (!isDragging) { 
                     if(type === 'settings') phone.classList.add('open'); 
                     else toggleCC(true); 
                 } 
             };
-            document.addEventListener('mousemove', move); 
-            document.addEventListener('mouseup', stop);
+
+            document.addEventListener(isTouch ? 'touchmove' : 'mousemove', move, { passive: false }); 
+            document.addEventListener(isTouch ? 'touchend' : 'mouseup', stop);
         }
 
         function changeBrightness(v) { document.documentElement.style.setProperty('--bright', v); }
