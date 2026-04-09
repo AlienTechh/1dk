@@ -38,6 +38,30 @@
             box-shadow: 0 50px 100px rgba(0,0,0,0.9);
         }
 
+        /* --- NEW: Boot Screen Styling --- */
+        .boot-screen {
+            position: absolute; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; transition: opacity 0.5s ease;
+        }
+        .boot-logo { font-size: 32px; font-weight: 800; letter-spacing: 1px; }
+        .boot-spinner {
+            margin-top: 25px; width: 24px; height: 24px;
+            border: 3px solid rgba(255,255,255,0.2); border-top-color: #fff;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* AOD Styling */
+        .aod-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 4500; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            color: rgba(255, 255, 255, 0.2); pointer-events: none;
+        }
+        .aod-time { font-size: 40px; font-weight: 200; }
+        .aod-date { font-size: 12px; margin-top: 5px; text-transform: uppercase; }
+
         .brightness-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; pointer-events: none; z-index: 3800; opacity: calc(1 - var(--bright)); }
         .punch-hole { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 80px; height: 22px; background: #000; border-radius: 20px; z-index: 3900; border: 1px solid #1a1a1a; }
         
@@ -51,14 +75,11 @@
         .screen-off { position: absolute; width: 100%; height: 100%; background: #000; z-index: 4000; transition: opacity 0.4s; cursor: pointer; opacity: 0; pointer-events: none; }
         .screen-is-off { opacity: 1; pointer-events: auto; }
 
-        /* AOD Styles */
-        .aod-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 4050; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; pointer-events: none; color: rgba(255,255,255,0.3); text-align: center; }
-        .aod-active { opacity: 1; }
-        .aod-time { font-size: 48px; font-weight: 200; }
-        .aod-date { font-size: 14px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
-
         .wallpaper { position: absolute; width: 100%; height: 100%; background: #1a3a5a url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover; transition: transform 0.8s var(--ios-spring), filter 0.5s; z-index: 1; transform: scale(1.1); }
         
+        /* --- NEW: CC Real-time Blur --- */
+        .cc-active .wallpaper { filter: blur(25px) brightness(0.6); transform: scale(1.15); }
+
         .lockscreen { position: absolute; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; padding-top: 80px; color: white; transition: transform 0.7s var(--ios-spring), opacity 0.4s; }
         .lock-time { font-size: 64px; font-weight: 200; }
 
@@ -113,6 +134,17 @@
 <body id="mainBody">
 
     <div class="phone" id="phone" ondblclick="handleDoubleTap(event)">
+
+        <div class="boot-screen" id="bootScreen">
+            <div class="boot-logo">FakeOS</div>
+            <div class="boot-spinner"></div>
+        </div>
+
+        <div class="aod-layer" id="aod">
+            <div class="aod-time" id="aodTime">00:00</div>
+            <div class="aod-date" id="aodDate">Thursday, April 9</div>
+        </div>
+
         <audio id="sound-unlock" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
         <audio id="sound-lock" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
 
@@ -139,12 +171,6 @@
         </div>
 
         <div class="screen-off" id="blackOverlay"></div>
-        
-        <div class="aod-screen" id="aodView">
-            <div class="aod-time" id="aod-time">12:00</div>
-            <div class="aod-date" id="aod-date">Monday, Jan 1</div>
-        </div>
-
         <div class="wallpaper" id="mainWallpaper"></div>
         
         <div class="lockscreen" id="lockView">
@@ -169,11 +195,11 @@
 
         <div class="drag-btn icon-normal-settings" id="settingsBtn" 
              onmousedown="setupDrag(event, this, 'settings')" 
-             ontouchstart="setupDrag(event, this, 'settings')"></div>
+             ontouchstart="setupDrag(event, this, 'settings')">⚙️</div>
              
         <div class="drag-btn icon-normal-cc" id="ccIconBtn" 
              onmousedown="setupDrag(event, this, 'cc')" 
-             ontouchstart="setupDrag(event, this, 'cc')"></div>
+             ontouchstart="setupDrag(event, this, 'cc')">📱</div>
 
         <input type="file" id="file-input" hidden accept="image/*" onchange="changeWallpaper(event)">
 
@@ -207,14 +233,24 @@
     </div>
 
     <script>
+        // --- NEW: Boot Screen Logic ---
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const boot = document.getElementById('bootScreen');
+                boot.style.opacity = '0';
+                setTimeout(() => boot.style.display = 'none', 500); // Wait for fade transition
+            }, 3000);
+        });
+
         const phone = document.getElementById('phone'), blackOverlay = document.getElementById('blackOverlay'), wallpaper = document.getElementById('mainWallpaper'), ccPanel = document.getElementById('ccPanel');
         const settingsApp = document.getElementById('settingsApp');
         const soundUnlock = document.getElementById('sound-unlock');
         const soundLock = document.getElementById('sound-lock');
-        const aodView = document.getElementById('aodView');
+        const aod = document.getElementById('aod');
         
         let isPowerOn = true, activePin = null, currentPinInput = "";
-        let homeTimer, aodTimer;
+        let homeTimer, aodTimeout;
+        let currentPage = 1; // --- NEW: Track current app page for Gestures ---
 
         function playSfx(s) { s.currentTime = 0; s.play().catch(e => {}); }
 
@@ -313,37 +349,25 @@
 
         function handleDoubleTap(e) {
             if (e.target.closest('.cc-btn') || e.target.closest('.cc-slider-box') || ccPanel.classList.contains('cc-open')) return;
-            if (e.target.classList.contains('drag-btn') || e.target.classList.contains('fingerprint-scanner') || e.target.classList.contains('num-btn')) return;
             
             if (!isPowerOn) { 
-                wakeScreen();
+                blackOverlay.classList.remove('screen-is-off'); 
+                aod.style.display = 'none';
+                clearTimeout(aodTimeout);
+                isPowerOn = true; 
             } 
             else if (!phone.classList.contains('open') && phone.classList.contains('is-unlocked')) { 
-                sleepScreen();
+                playSfx(soundLock);
+                blackOverlay.classList.add('screen-is-off'); 
+                phone.classList.remove('is-unlocked'); 
+                isPowerOn = false; 
+                toggleCC(false); 
+                closePinPad();
+                // AOD Timer
+                aodTimeout = setTimeout(() => {
+                    if(!isPowerOn) aod.style.display = 'flex';
+                }, 5000);
             }
-        }
-
-        function wakeScreen() {
-            clearTimeout(aodTimer);
-            blackOverlay.classList.remove('screen-is-off');
-            aodView.classList.remove('aod-active');
-            isPowerOn = true;
-        }
-
-        function sleepScreen() {
-            playSfx(soundLock);
-            blackOverlay.classList.add('screen-is-off');
-            phone.classList.remove('is-unlocked');
-            isPowerOn = false;
-            toggleCC(false);
-            closePinPad();
-            
-            // Start AOD timer
-            aodTimer = setTimeout(() => {
-                if (!isPowerOn) {
-                    aodView.classList.add('aod-active');
-                }
-            }, 5000);
         }
 
         function handleHomeBar() { 
@@ -361,6 +385,40 @@
                 phone.classList.remove('open'); 
             } 
         }
+
+        // --- NEW: App Swipe Back Gestures ---
+        let isSwiping = false, gestureStartX = 0, gestureStartY = 0;
+        
+        function startGesture(x, y) {
+            if (!phone.classList.contains('open')) return;
+            let rect = settingsApp.getBoundingClientRect();
+            let relX = x - rect.left;
+            if (relX < 40) { // If starting near the left edge
+                isSwiping = true;
+                gestureStartX = x;
+                gestureStartY = y;
+            }
+        }
+
+        function endGesture(x, y) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            // If swiped right by at least 60px, and didn't move too much vertically
+            if (x - gestureStartX > 60 && Math.abs(y - gestureStartY) < 50) {
+                if (currentPage !== 1) {
+                    showPage(1); // Go back a page
+                } else {
+                    handleHomeBar(); // Swipe away app if on root page
+                }
+            }
+        }
+
+        settingsApp.addEventListener('touchstart', e => startGesture(e.touches[0].clientX, e.touches[0].clientY), {passive:true});
+        settingsApp.addEventListener('touchend', e => endGesture(e.changedTouches[0].clientX, e.changedTouches[0].clientY));
+        // Added mouse support so you can test swipe gestures on PC
+        settingsApp.addEventListener('mousedown', e => startGesture(e.clientX, e.clientY));
+        settingsApp.addEventListener('mouseup', e => endGesture(e.clientX, e.clientY));
+        // ------------------------------------
 
         function setupDrag(e, el, type) {
             if (!phone.classList.contains('is-unlocked') || phone.classList.contains('open') || phone.classList.contains('recents-view') || ccPanel.classList.contains('cc-open')) return;
@@ -387,6 +445,7 @@
                     if(type === 'settings') {
                         phone.classList.add('open');
                         settingsApp.classList.add('is-running');
+                        currentPage = 1; // Reset to page 1 on open
                     } else toggleCC(true); 
                 } 
             };
@@ -395,9 +454,24 @@
         }
 
         function changeBrightness(v) { document.documentElement.style.setProperty('--bright', v); }
-        function toggleCC(o) { if(isPowerOn && phone.classList.contains('is-unlocked')) ccPanel.classList.toggle('cc-open', o); }
-        function showPage(n) { document.querySelectorAll('.page').forEach(p => p.style.display = 'none'); document.getElementById('p' + n).style.display = 'block'; }
+        
+        // --- UPDATED: Toggle CC to add blur class ---
+        function toggleCC(o) { 
+            if(isPowerOn && phone.classList.contains('is-unlocked')) {
+                ccPanel.classList.toggle('cc-open', o); 
+                phone.classList.toggle('cc-active', o);
+            }
+        }
+        
+        // --- UPDATED: Track current page for back gestures ---
+        function showPage(n) { 
+            currentPage = n;
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none'); 
+            document.getElementById('p' + n).style.display = 'block'; 
+        }
+
         function setSpd(t) { document.documentElement.style.setProperty('--spd', t); }
+        
         function changeWallpaper(e) { 
             const r = new FileReader(); 
             r.onload = (ev) => { wallpaper.style.backgroundImage = `url('${ev.target.result}')`; }; 
@@ -411,21 +485,24 @@
             if(s === 'glassy') {
                 setBtn.className = 'drag-btn icon-glassy';
                 ccBtn.className = 'drag-btn icon-glassy';
+                setBtn.textContent = '⚙️';
+                ccBtn.textContent = '📱';
             } else {
                 setBtn.className = 'drag-btn icon-normal-settings';
                 ccBtn.className = 'drag-btn icon-normal-cc';
+                setBtn.textContent = '⚙️';
+                ccBtn.textContent = '📱';
             }
         }
 
         function updateTime() { 
             const now = new Date(); 
             const t = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0'); 
-            const d = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            
+            const d = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
             document.getElementById('clock').innerText = t; 
             document.getElementById('st-time').innerText = t; 
-            document.getElementById('aod-time').innerText = t;
-            document.getElementById('aod-date').innerText = d;
+            document.getElementById('aodTime').innerText = t; 
+            document.getElementById('aodDate').innerText = d; 
         }
         setInterval(updateTime, 1000); updateTime();
     </script>
