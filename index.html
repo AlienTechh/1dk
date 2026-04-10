@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NovaOS V10</title>
+    <title>RandomOS 1.0 Beta</title>
     <style>
         * { 
             margin: 0; 
@@ -74,19 +74,35 @@
             z-index: 2500;
             display: none;
         }
-        #black-overlay.is-off { display: block; }
 
-        .screen {
+        /* WALLPAPER LAYER */
+        .wallpaper {
             position: absolute;
             width: 100%;
             height: 100%;
             background-image: url('1000005643.jpg');
             background-size: cover;
             background-position: center;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            /* Animation for blur and zoom */
+            transition: filter 0.5s ease, transform 0.5s ease;
+            z-index: 1;
         }
 
-        .hidden { opacity: 0; pointer-events: none; transform: scale(0.9); }
+        /* The "Zoom & Blur" state when an app is open */
+        .wallpaper.app-active {
+            filter: blur(15px);
+            transform: scale(1.15);
+        }
+
+        .screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
         .active { opacity: 1; pointer-events: all; transform: scale(1); }
 
         #lock-screen {
@@ -95,12 +111,11 @@
             justify-content: center;
             align-items: center;
             color: white;
-            z-index: 500;
         }
         .time { font-size: 3.5rem; font-weight: 300; }
         .date { font-size: 1rem; margin-top: -5px; opacity: 0.9; }
 
-        #home-screen { padding: 60px 15px; z-index: 10; }
+        #home-screen { padding: 60px 15px; }
         .app-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -123,9 +138,9 @@
             font-size: 1.5rem;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .app span { color: white; font-size: 0.65rem; }
+        .app span { color: white; font-size: 0.65rem; font-weight: 500; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
-        /* SETTINGS & CUSTOMIZATION WINDOWS */
+        /* APP WINDOWS (Scale Zoom Animation) */
         .app-window {
             position: absolute;
             top: 0; left: 0;
@@ -157,7 +172,6 @@
             color: #007aff;
             font-weight: 600;
             margin-bottom: 20px;
-            display: inline-block;
             cursor: pointer;
         }
 
@@ -183,6 +197,8 @@
         <div class="screen-container">
             <div class="punch-hole"></div>
             <div id="black-overlay"></div>
+            
+            <div class="wallpaper" id="main-wallpaper"></div>
 
             <div id="lock-screen" class="screen active">
                 <div class="time" id="clock">00:00</div>
@@ -204,10 +220,6 @@
                     <span>Customization</span>
                     <span>></span>
                 </div>
-                <div class="settings-item">
-                    <span>About Phone</span>
-                    <span>></span>
-                </div>
             </div>
 
             <div id="customization-page" class="app-window">
@@ -226,9 +238,9 @@
 
     <script>
         let isPhoneOff = false;
+        const wallpaperLayer = document.getElementById('main-wallpaper');
         const wallpaperInput = document.getElementById('wallpaper-input');
 
-        // Navigation Logic
         function handleBarClick() {
             if (isPhoneOff) return;
             const lockScreen = document.getElementById('lock-screen');
@@ -242,20 +254,22 @@
 
         function openApp(id) {
             document.getElementById(id).classList.add('open');
+            // TRIGGER BLUR AND ZOOM
+            wallpaperLayer.classList.add('app-active');
         }
 
         function closeAllApps() {
             document.querySelectorAll('.app-window').forEach(win => win.classList.remove('open'));
             document.getElementById('home-screen').classList.replace('hidden', 'active');
+            // REMOVE BLUR AND ZOOM
+            wallpaperLayer.classList.remove('app-active');
         }
 
         function showSubPage(id) {
-            // Close all windows first, then open the specific sub-page
             document.querySelectorAll('.app-window').forEach(win => win.classList.remove('open'));
             document.getElementById(id).classList.add('open');
         }
 
-        // Wallpaper Logic
         function triggerFileSelect() {
             wallpaperInput.click();
         }
@@ -265,15 +279,12 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    document.querySelectorAll('.screen').forEach(s => {
-                        s.style.backgroundImage = `url(${e.target.result})`;
-                    });
+                    wallpaperLayer.style.backgroundImage = `url(${e.target.result})`;
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Power Logic
         function togglePower() {
             isPhoneOff = !isPhoneOff;
             document.getElementById('black-overlay').style.display = isPhoneOff ? 'block' : 'none';
