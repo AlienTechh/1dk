@@ -222,38 +222,38 @@
             bottom: 0; 
             left: 0; 
             width: 100%; 
-            height: 30px; /* Slimmer height for bottom alignment */
+            height: 45px; /* Enough height to hold buttons at the bottom */
             z-index: 5600; 
             display: flex; 
             justify-content: center; 
-            align-items: flex-end; /* Align items to the bottom */
-            padding-bottom: 8px; /* Spacing from the very bottom edge */
+            align-items: flex-end; /* Push content to the bottom */
+            padding-bottom: 8px; /* Spacing from the physical edge */
         }
 
-        /* Swipe Line - Positioned at the bottom */
+        /* Swipe Line Style */
         #home-bar {
             width: 120px; 
             height: 5px; 
             background: rgba(255,255,255,0.7);
             border-radius: 10px; 
             cursor: pointer;
+            margin-bottom: 2px; /* Slight lift for aesthetics */
         }
 
-        /* 3-Button Style */
+        /* 3-Button Style - Moved down */
         #three-buttons {
             width: 100%; 
             display: none; 
             justify-content: space-around; 
             align-items: center;
             padding: 0 30px;
-            margin-bottom: 5px;
         }
         .nav-btn {
             color: white; 
             font-size: 1.3rem; 
             cursor: pointer; 
             width: 50px; 
-            height: 40px;
+            height: 35px; /* Slightly shorter to stay low */
             display: flex; 
             justify-content: center; 
             align-items: center;
@@ -439,7 +439,7 @@
             if(!inSubPage) closeAllApps();
         }
 
-        function handleRecentAction() { console.log("Recents"); }
+        function handleRecentAction() { console.log("Recent apps triggered"); }
 
         function openApp(id) {
             document.getElementById(id).classList.add('open');
