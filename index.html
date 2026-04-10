@@ -3,226 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile OS Simulator</title>
+    <title>NovaOS V2</title>
     <style>
-        /* BASE STYLING */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
         body { 
-            background: #121212; 
+            background: #1a1a1a; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
-            overflow: hidden;
         }
 
-        /* PHONE FRAME */
-        .phone-container {
-            width: 360px;
-            height: 740px;
+        /* COMPACT PHONE FRAME */
+        .phone {
+            width: 300px; /* Smaller, more realistic size */
+            height: 620px;
             background: #000;
-            border: 8px solid #333;
-            border-radius: 40px;
+            border: 10px solid #222;
+            border-radius: 45px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        /* SCREEN LAYERS */
+        /* UNIVERSAL WALLPAPER */
         .screen {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            transition: transform 0.5s ease-in-out, opacity 0.3s;
-            display: none;
+            width: 100%;
+            height: 100%;
+            background-image: url('wallpaper.jpg'); /* USE YOUR IMAGE HERE */
             background-size: cover;
             background-position: center;
+            display: none;
+            flex-direction: column;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .active { display: block; }
+        .active { display: flex; }
 
         /* LOCK SCREEN */
         #lock-screen {
-            background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1000');
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: space-between;
-            padding: 60px 20px;
+            align-items: center;
+            padding: 80px 20px;
             color: white;
             z-index: 10;
         }
 
-        .time { font-size: 4rem; font-weight: 200; }
-        .date { font-size: 1.2rem; margin-top: -10px; opacity: 0.8; }
-        .unlock-hint { margin-bottom: 20px; font-size: 0.9rem; animation: pulse 2s infinite; }
+        .time { font-size: 3.5rem; font-weight: 300; }
+        .date { font-size: 1rem; margin-top: -5px; opacity: 0.9; }
+        
+        .unlock-area {
+            margin-bottom: 20px;
+            text-align: center;
+            animation: bounce 2s infinite;
+            cursor: pointer;
+        }
 
         /* HOME SCREEN */
         #home-screen {
-            background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1000');
-            padding: 40px 20px;
-        }
-
-        .widget-clock {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 25px;
-            color: white;
-            text-align: center;
-            margin-bottom: 30px;
+            padding: 50px 15px;
         }
 
         .app-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            gap: 15px;
+            margin-top: 20px;
         }
 
-        .app-icon {
+        .app {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: white;
-            font-size: 0.7rem;
             cursor: pointer;
         }
 
-        .icon-box {
-            width: 55px;
-            height: 55px;
+        .icon {
+            width: 50px;
+            height: 50px;
             border-radius: 12px;
             margin-bottom: 5px;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 1.5rem;
+            transition: transform 0.2s;
         }
 
-        /* SETTINGS SCREEN */
-        #settings-screen {
-            background: #fff;
-            padding: 20px;
-            color: #333;
+        .icon:active { transform: scale(0.9); }
+        .app span { color: white; font-size: 0.65rem; }
+
+        /* SETTINGS PAGE */
+        #settings {
+            background: #f2f2f7;
+            padding: 50px 20px;
         }
 
-        .settings-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .settings-item {
+        .header { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; }
+        .list-item {
+            background: white;
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-radius: 10px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
+        }
+
+        /* HOME INDICATOR (The Bar at the bottom) */
+        .home-bar {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 10px;
+            z-index: 100;
             cursor: pointer;
         }
 
-        /* ANIMATIONS */
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; }
-            100% { opacity: 0.4; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
     </style>
 </head>
 <body>
 
-    <div class="phone-container">
-        
-        <div id="lock-screen" class="screen active" onclick="goToHome()">
-            <div class="top">
-                <div class="time" id="lock-time">13:59</div>
+    <div class="phone">
+        <div id="lock-screen" class="screen active" onclick="unlock()">
+            <div style="text-align: center;">
+                <div class="time" id="clock">14:02</div>
                 <div class="date">Friday, April 10</div>
             </div>
-            <div class="unlock-hint">Tap to unlock</div>
+            <div class="unlock-area">
+                <p>Tap to unlock</p>
+            </div>
         </div>
 
         <div id="home-screen" class="screen">
-            <div class="widget-clock">
-                <h2 style="font-size: 2.5rem;" id="home-time">13:59</h2>
-                <p>Wed, Apr 18</p>
-            </div>
-
             <div class="app-grid">
-                <div class="app-icon">
-                    <div class="icon-box" style="background: #4CAF50;">📞</div>
-                    <span>Phone</span>
-                </div>
-                <div class="app-icon">
-                    <div class="icon-box" style="background: #2196F3;">💬</div>
-                    <span>Chat</span>
-                </div>
-                <div class="app-icon" onclick="goToSettings()">
-                    <div class="icon-box" style="background: #9E9E9E;">⚙️</div>
+                <div class="app" onclick="openSettings()">
+                    <div class="icon" style="background: #9ea0a4;">⚙️</div>
                     <span>Settings</span>
                 </div>
-                <div class="app-icon">
-                    <div class="icon-box" style="background: #FF5722;">📸</div>
-                    <span>Camera</span>
+                <div class="app">
+                    <div class="icon" style="background: #ff9500;">🎨</div>
+                    <span>Themes</span>
+                </div>
+                <div class="app">
+                    <div class="icon" style="background: #34c759;">📞</div>
+                    <span>Phone</span>
+                </div>
+                <div class="app">
+                    <div class="icon" style="background: #007aff;">💬</div>
+                    <span>Messages</span>
                 </div>
             </div>
         </div>
 
-        <div id="settings-screen" class="screen">
-            <div class="settings-header" onclick="goToHome()" style="cursor: pointer;">
-                <span>←</span> Settings
-            </div>
-            
-            <div class="settings-item">
-                <span>About OS</span>
-                <span style="color: #999;">></span>
-            </div>
-            <div class="settings-item">
-                <span>Animations</span>
-                <span style="color: #999;">1.5x</span>
-            </div>
-            <div class="settings-item">
-                <span>Wallpaper</span>
-                <span style="color: #999;">Set</span>
-            </div>
-            <div class="settings-item">
-                <span>Storage</span>
-                <span style="color: #999;">75% Free</span>
-            </div>
+        <div id="settings" class="screen">
+            <div class="header">Settings</div>
+            <div class="list-item"><span>About Phone</span> <span>></span></div>
+            <div class="list-item"><span>Display</span> <span>></span></div>
+            <div class="list-item"><span>Wallpapers</span> <span>></span></div>
+            <div class="list-item" style="color: red; font-weight: bold;" onclick="goHome()">Back to Home</div>
         </div>
 
+        <div class="home-bar" onclick="goHome()"></div>
     </div>
 
     <script>
-        // NAVIGATION LOGIC
-        function goToHome() {
-            hideAll();
+        function unlock() {
+            document.getElementById('lock-screen').classList.remove('active');
             document.getElementById('home-screen').classList.add('active');
         }
 
-        function goToSettings() {
-            hideAll();
-            document.getElementById('settings-screen').classList.add('active');
+        function openSettings() {
+            document.getElementById('home-screen').classList.remove('active');
+            document.getElementById('settings').classList.add('active');
         }
 
-        function hideAll() {
+        function goHome() {
             const screens = document.querySelectorAll('.screen');
             screens.forEach(s => s.classList.remove('active'));
+            document.getElementById('home-screen').classList.add('active');
         }
 
-        // REAL TIME UPDATE
+        // Live Clock
         function updateTime() {
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
                             now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('lock-time').innerText = timeStr;
-            document.getElementById('home-time').innerText = timeStr;
+            document.getElementById('clock').innerText = timeStr;
         }
-
         setInterval(updateTime, 1000);
         updateTime();
     </script>
-
 </body>
 </html>
