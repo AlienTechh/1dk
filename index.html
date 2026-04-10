@@ -6,14 +6,12 @@
     <title>RandomOS 1.0 Beta</title>
     <style>
         :root {
-            --anim-speed: 0.4s; /* Slightly faster default for that "Fast" feel */
+            --anim-speed: 0.5s;
             /* Theme Variables */
             --bg-color: #f2f2f7;
             --card-bg: white;
             --text-color: #000;
             --status-text: white;
-            /* OriginOS Bezier: Quick start, smooth finish */
-            --ios-bezier: cubic-bezier(0.23, 1, 0.32, 1); 
         }
 
         /* Light Mode Classes (Default) */
@@ -265,7 +263,7 @@
             background-color: #1a1a1a;
             background-image: url('1000005643.jpg');
             background-size: cover; background-position: center;
-            transition: filter var(--anim-speed) ease, transform var(--anim-speed) var(--ios-bezier);
+            transition: filter var(--anim-speed) ease, transform var(--anim-speed) cubic-bezier(0.2, 0, 0, 1);
             z-index: 1;
         }
         .wallpaper.app-active { filter: blur(15px) brightness(0.7); transform: scale(1.1); }
@@ -300,26 +298,71 @@
         }
         .app span { color: white; font-size: 0.7rem; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
-        /* APP WINDOWS - FAST SWITCH OPTIMIZED */
+        /* APP WINDOWS */
         .app-window {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            color: var(--text-color);
+            background: var(--bg-color); /* Theme based */
+            color: var(--text-color); /* Theme based */
             z-index: 1000;
             border-radius: 38px;
             padding: 60px 25px;
             opacity: 0; 
             pointer-events: none;
-            transform: scale(0.1); /* Start smaller for more dynamic expansion */
+            transform: scale(0);
             transition: 
-                transform var(--anim-speed) var(--ios-bezier), 
-                opacity var(--anim-speed) var(--ios-bezier),
+                transform var(--anim-speed) cubic-bezier(0.32, 0.72, 0, 1), 
+                opacity var(--anim-speed) cubic-bezier(0.32, 0.72, 0, 1),
                 background 0.3s;
-            will-change: transform, opacity;
         }
         
         .app-window.open { opacity: 1; transform: scale(1); pointer-events: all; }
+
+        /* FAST SWITCHER STYLES */
+        #recents-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            z-index: 4700;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 50px;
+        }
+        .recents-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            width: 100%;
+            padding: 20px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+        }
+        .recent-card {
+            min-width: 200px;
+            height: 350px;
+            background: var(--bg-color);
+            border-radius: 20px;
+            scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        .recent-card:active { transform: scale(0.95); }
+        .recent-card-header {
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
 
         .settings-item {
             background: var(--card-bg); /* Theme based */
@@ -367,8 +410,7 @@
         .dev-speed-btn.active { background: #007aff; color: white; }
     </style>
 </head>
-<body class="dark-theme"> 
-    <div class="phone">
+<body class="dark-theme"> <div class="phone">
         <div id="dev-toast">developer options activated</div>
 
         <div class="power-btn" 
@@ -425,17 +467,22 @@
                 <div class="date">Friday, April 10</div>
             </div>
 
+            <div id="recents-screen">
+                <div class="recents-container" id="recents-list"></div>
+                <div style="color:white; margin-top:20px; font-size: 0.8rem; opacity: 0.7;" onclick="handleHomeAction()">Close Recents</div>
+            </div>
+
             <div id="home-screen" class="screen hidden">
                 <div class="app-grid">
-                    <div class="app" onclick="openAppWithOrigin(this, 'settings-main')">
+                    <div class="app" onclick="openAppWithOrigin(this, 'settings-main', 'Settings', '⚙️')">
                         <div class="icon">⚙️</div>
                         <span>Settings</span>
                     </div>
-                    <div class="app" onclick="openAppWithOrigin(this, 'empty-app-1')">
+                    <div class="app" onclick="openAppWithOrigin(this, 'empty-app-1', 'Empty App 1', '👻')">
                         <div class="icon" style="background: #E0E0E0;">👻</div>
                         <span>Empty App 1</span>
                     </div>
-                    <div class="app" onclick="openAppWithOrigin(this, 'empty-app-2')">
+                    <div class="app" onclick="openAppWithOrigin(this, 'empty-app-2', 'Empty App 2', '🍃')">
                         <div class="icon" style="background: #E0E0E0;">🍃</div>
                         <span>Empty App 2</span>
                     </div>
@@ -478,8 +525,8 @@
                 <div class="back-btn" onclick="showSubPage('settings-main')">❮ Back</div>
                 <h1 style="text-align: center; margin-bottom: 10px;">Animation Speed</h1>
                 <div class="dev-btn-group">
-                    <button class="dev-speed-btn" id="speed-slow" onclick="setAnimSpeed('0.8s', 'slow')">Slow</button>
-                    <button class="dev-speed-btn active" id="speed-normal" onclick="setAnimSpeed('0.4s', 'normal')">Normal</button>
+                    <button class="dev-speed-btn" id="speed-slow" onclick="setAnimSpeed('1.2s', 'slow')">Slow</button>
+                    <button class="dev-speed-btn active" id="speed-normal" onclick="setAnimSpeed('0.5s', 'normal')">Normal</button>
                     <button class="dev-speed-btn" id="speed-fast" onclick="setAnimSpeed('0.2s', 'fast')">Fast</button>
                 </div>
             </div>
@@ -500,10 +547,12 @@
             <div id="custom-page" class="app-window">
                 <div class="back-btn" onclick="showSubPage('settings-main')">❮ Back</div>
                 <h1 style="margin-bottom: 25px;">Customization</h1>
+                
                 <p style="font-size: 0.8rem; margin-bottom: 10px; opacity: 0.7;">Wallpaper</p>
                 <div class="settings-item" onclick="triggerFileSelect()">
                     <span>Change Wallpaper</span>
                 </div>
+
                 <p style="font-size: 0.8rem; margin-top: 20px; margin-bottom: 10px; opacity: 0.7;">System Theme</p>
                 <div class="settings-item" onclick="setTheme('light')">
                     <span>Light Mode</span>
@@ -548,11 +597,14 @@
         let pressStartTime;
         let aboutClicks = 0;
         let isDevMode = false;
-        let lastAppOrigin = { x: '50%', y: '50%' };
+
+        // TRACKING FOR FAST SWITCH
+        let openApps = new Set(); // Stores app IDs that are "running"
 
         const wallpaperLayer = document.getElementById('main-wallpaper');
         const wallpaperInput = document.getElementById('wallpaper-input');
 
+        // THEME LOGIC
         function setTheme(mode) {
             const body = document.body;
             if (mode === 'light') {
@@ -626,6 +678,7 @@
             wallpaperLayer.classList.remove('app-active');
             document.getElementById('home-screen').classList.replace('active', 'hidden');
             document.getElementById('lock-screen').classList.replace('hidden', 'active');
+            document.getElementById('recents-screen').style.display = 'none';
             updateNavVisibility();
         }
 
@@ -669,26 +722,26 @@
             }, 4500);
         }
 
-        // IMPROVED: OriginOS-style Fast Switch Logic
-        function openAppWithOrigin(element, id) {
+        // Updated function to track open apps
+        function openAppWithOrigin(element, id, name, icon) {
             const appWindow = document.getElementById(id);
             const rect = element.getBoundingClientRect();
             const containerRect = document.querySelector('.screen-container').getBoundingClientRect();
-            
-            // Calculate origin relative to the screen container
             const originX = (rect.left + rect.width / 2) - containerRect.left;
             const originY = (rect.top + rect.height / 2) - containerRect.top;
             
-            lastAppOrigin = { x: `${originX}px`, y: `${originY}px` };
-
-            // Apply origin and open
-            appWindow.style.transformOrigin = `${lastAppOrigin.x} ${lastAppOrigin.y}`;
+            appWindow.style.transformOrigin = `${originX}px ${originY}px`;
             
-            // Small timeout to ensure origin is set before transition starts
-            requestAnimationFrame(() => {
-                appWindow.classList.add('open');
-                wallpaperLayer.classList.add('app-active');
-            });
+            // Close recents if open
+            document.getElementById('recents-screen').style.display = 'none';
+            
+            // Mark app as running
+            if(name) {
+                openApps.add(JSON.stringify({id, name, icon}));
+            }
+
+            appWindow.classList.add('open');
+            wallpaperLayer.classList.add('app-active');
         }
 
         function toggleCC(show) {
@@ -719,15 +772,13 @@
         function handleHomeAction() {
             if (isPhoneSleeping) return;
             toggleCC(false);
+            document.getElementById('recents-screen').style.display = 'none';
             const lock = document.getElementById('lock-screen');
             if (lock.classList.contains('active')) {
                 lock.classList.replace('active', 'hidden');
                 document.getElementById('home-screen').classList.replace('hidden', 'active');
             } else {
-                // When closing, ensure they scale back to their specific origin
-                document.querySelectorAll('.app-window').forEach(win => {
-                    win.classList.remove('open');
-                });
+                document.querySelectorAll('.app-window').forEach(win => win.classList.remove('open'));
                 wallpaperLayer.classList.remove('app-active');
             }
             updateNavVisibility();
@@ -752,16 +803,46 @@
             if(!backProcessed) handleHomeAction();
         }
 
-        function showSubPage(id) {
-            // Subpages keep the current transform origin for consistency
-            const currentWin = document.querySelector('.app-window.open');
-            const targetWin = document.getElementById(id);
+        // NEW RECENTS LOGIC
+        function handleRecentAction() {
+            if (isPhoneSleeping || isCompletelyShutdown) return;
             
-            if(currentWin) {
-                targetWin.style.transformOrigin = currentWin.style.transformOrigin;
-                currentWin.classList.remove('open');
+            const recentsScreen = document.getElementById('recents-screen');
+            const list = document.getElementById('recents-list');
+            list.innerHTML = ""; // Clear list
+
+            if(openApps.size === 0) {
+                list.innerHTML = "<div style='color:white; opacity:0.5'>No apps open</div>";
+            } else {
+                openApps.forEach(appStr => {
+                    const app = JSON.parse(appStr);
+                    const card = document.createElement('div');
+                    card.className = "recent-card";
+                    card.innerHTML = `
+                        <div class="recent-card-header">
+                            <span>${app.icon}</span> ${app.name}
+                        </div>
+                        <div style="flex-grow:1; display:flex; align-items:center; justify-content:center; opacity:0.2; font-size:3rem;">
+                            ${app.icon}
+                        </div>
+                    `;
+                    card.onclick = () => {
+                        // Switch to this app
+                        document.querySelectorAll('.app-window').forEach(win => win.classList.remove('open'));
+                        document.getElementById(app.id).classList.add('open');
+                        recentsScreen.style.display = 'none';
+                        wallpaperLayer.classList.add('app-active');
+                    };
+                    list.appendChild(card);
+                });
             }
-            targetWin.classList.add('open');
+
+            recentsScreen.style.display = 'flex';
+        }
+
+        function showSubPage(id) {
+            document.querySelectorAll('.app-window').forEach(win => win.classList.remove('open'));
+            document.getElementById(id).classList.add('open');
         }
 
         function triggerFileSelect() { wallpaperInput.click(); }
