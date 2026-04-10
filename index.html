@@ -216,15 +216,20 @@
 
         .back-btn { color: #007aff; font-weight: 700; margin-bottom: 25px; cursor: pointer; }
 
-        /* NAVIGATION BAR LOGIC */
+        /* NAVIGATION BAR SYSTEM */
         #nav-container {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 40px;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 50px;
             z-index: 5600; display: flex; justify-content: center; align-items: center;
         }
+
+        /* Swipe Line Style - Positioned slightly higher */
         #home-bar {
             width: 120px; height: 5px; background: rgba(255,255,255,0.7);
-            border-radius: 10px; cursor: pointer; transition: background 0.2s;
+            border-radius: 10px; cursor: pointer;
+            margin-bottom: 15px; /* Moved up as requested */
         }
+
+        /* 3-Button Style */
         #three-buttons {
             width: 100%; display: none; justify-content: space-around; align-items: center;
             padding: 0 30px;
@@ -232,6 +237,11 @@
         .nav-btn {
             color: white; font-size: 1.3rem; cursor: pointer; width: 50px; height: 40px;
             display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Lockscreen Unlock Trigger (Hidden/Transparent Button) */
+        #unlock-trigger {
+            width: 100%; height: 100%; background: transparent; cursor: pointer;
         }
     </style>
 </head>
@@ -321,7 +331,10 @@
             </div>
 
             <div id="nav-container">
-                <div id="home-bar" onclick="handleHomeAction()"></div>
+                <div id="unlock-trigger" onclick="handleHomeAction()"></div>
+                
+                <div id="home-bar" onclick="handleHomeAction()" style="display:none;"></div>
+                
                 <div id="three-buttons">
                     <div class="nav-btn" onclick="handleBackAction()">◂</div>
                     <div class="nav-btn" onclick="handleHomeAction()">●</div>
@@ -335,6 +348,7 @@
 
     <script>
         let isPhoneOff = false;
+        let currentNavMode = 'swipe'; // Default
         const wallpaperLayer = document.getElementById('main-wallpaper');
         const wallpaperInput = document.getElementById('wallpaper-input');
 
@@ -352,7 +366,46 @@
             document.getElementById('brightness-overlay').style.opacity = darkness;
         }
 
-        // NAV ACTIONS
+        // NAVIGATION LOGIC
+        function setNavStyle(style) {
+            currentNavMode = style;
+            const checkSwipe = document.getElementById('check-swipe');
+            const checkButtons = document.getElementById('check-buttons');
+
+            if (style === 'swipe') {
+                checkSwipe.style.display = 'block';
+                checkButtons.style.display = 'none';
+            } else {
+                checkSwipe.style.display = 'none';
+                checkButtons.style.display = 'block';
+            }
+            updateNavVisibility();
+        }
+
+        function updateNavVisibility() {
+            const lockScreen = document.getElementById('lock-screen');
+            const unlockTrigger = document.getElementById('unlock-trigger');
+            const homeBar = document.getElementById('home-bar');
+            const buttons = document.getElementById('three-buttons');
+
+            if (lockScreen.classList.contains('active')) {
+                // Lockscreen state: Always show transparent unlocker, hide real navs
+                unlockTrigger.style.display = 'block';
+                homeBar.style.display = 'none';
+                buttons.style.display = 'none';
+            } else {
+                // Unlocked state: Show based on settings
+                unlockTrigger.style.display = 'none';
+                if (currentNavMode === 'swipe') {
+                    homeBar.style.display = 'block';
+                    buttons.style.display = 'none';
+                } else {
+                    homeBar.style.display = 'none';
+                    buttons.style.display = 'flex';
+                }
+            }
+        }
+
         function handleHomeAction() {
             if (isPhoneOff) return;
             toggleCC(false);
@@ -363,11 +416,11 @@
             } else {
                 closeAllApps();
             }
+            updateNavVisibility();
         }
 
         function handleBackAction() {
             if (isPhoneOff) return;
-            // If a subpage is open, go back to main settings
             const subpages = ['nav-settings', 'custom-page'];
             let inSubPage = false;
             subpages.forEach(id => {
@@ -376,32 +429,10 @@
                     inSubPage = true;
                 }
             });
-            // If in main app window, close app
             if(!inSubPage) closeAllApps();
         }
 
-        function handleRecentAction() {
-            console.log("Recents menu triggered");
-        }
-
-        function setNavStyle(style) {
-            const bar = document.getElementById('home-bar');
-            const buttons = document.getElementById('three-buttons');
-            const checkSwipe = document.getElementById('check-swipe');
-            const checkButtons = document.getElementById('check-buttons');
-
-            if (style === 'swipe') {
-                bar.style.display = 'block';
-                buttons.style.display = 'none';
-                checkSwipe.style.display = 'block';
-                checkButtons.style.display = 'none';
-            } else {
-                bar.style.display = 'none';
-                buttons.style.display = 'flex';
-                checkSwipe.style.display = 'none';
-                checkButtons.style.display = 'block';
-            }
-        }
+        function handleRecentAction() { console.log("Recent Apps"); }
 
         function openApp(id) {
             document.getElementById(id).classList.add('open');
@@ -427,9 +458,7 @@
             const file = this.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    wallpaperLayer.style.backgroundImage = `url(${e.target.result})`;
-                };
+                reader.onload = (e) => { wallpaperLayer.style.backgroundImage = `url(${e.target.result})`; };
                 reader.readAsDataURL(file);
             }
         });
@@ -443,6 +472,7 @@
                 closeAllApps();
                 document.getElementById('home-screen').classList.replace('active', 'hidden');
                 document.getElementById('lock-screen').classList.replace('hidden', 'active');
+                updateNavVisibility();
             }
         }
 
@@ -455,6 +485,9 @@
         }
         setInterval(updateTime, 1000);
         updateTime();
+        
+        // Initial nav setup
+        updateNavVisibility();
     </script>
 </body>
 </html>
