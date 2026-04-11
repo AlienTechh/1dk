@@ -39,7 +39,7 @@
             left: 50%; transform: translateX(-50%); z-index: 95;
         }
 
-        /* Set up CSS variables for instant mobile updating */
+        /* Set up CSS variables for instant updating */
         :root {
             --lock-bg: none;
             --home-bg: none;
@@ -241,17 +241,15 @@
 
         function handleFile(input) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => { 
-                    const newImg = e.target.result;
-                    // Apply immediately to both
-                    document.documentElement.style.setProperty('--lock-bg', `url("${newImg}")`);
-                    document.documentElement.style.setProperty('--home-bg', `url("${newImg}")`);
-                    
-                    // Clear the input after loading
-                    input.value = ""; 
-                };
-                reader.readAsDataURL(input.files[0]);
+                // Fix for PC: Create a lightweight local URL instead of processing a massive text string
+                const imageUrl = URL.createObjectURL(input.files[0]);
+                
+                // Apply immediately to both screens
+                document.documentElement.style.setProperty('--lock-bg', `url("${imageUrl}")`);
+                document.documentElement.style.setProperty('--home-bg', `url("${imageUrl}")`);
+                
+                // Clear the input so you can select the exact same image again if needed
+                input.value = ""; 
             }
         }
 
