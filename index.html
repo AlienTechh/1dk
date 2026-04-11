@@ -257,14 +257,14 @@
         let currentStream = null;
         let facingMode = "environment"; 
 
-        // --- SOUND EFFECTS CONFIG ---
-        const powerSound = new Audio('https://www.fesliyanstudios.com/play-mp3/6030'); // Mechanical Click
-        const shutterSound = new Audio('https://www.fesliyanstudios.com/play-mp3/589'); // Camera Shutter
-        const unlockSound = new Audio('https://www.fesliyanstudios.com/play-mp3/343'); // Soft Chime
+        // --- UPDATED SOUND EFFECTS ---
+        const powerSound = new Audio('http://googleusercontent.com/file_content/2');
+        const shutterSound = new Audio('http://googleusercontent.com/file_content/0');
+        const unlockSound = new Audio('http://googleusercontent.com/file_content/1');
 
         function togglePower() {
-            powerSound.currentTime = 0; // Reset sound to start
-            powerSound.play(); // Play click sound
+            powerSound.currentTime = 0; 
+            powerSound.play();
             
             isPowerOn = !isPowerOn;
             document.getElementById('power-overlay').style.opacity = isPowerOn ? '0' : '1';
