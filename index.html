@@ -52,6 +52,7 @@
             transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.8s ease;
             z-index: 1;
             background-color: #1a1a1a;
+            pointer-events: none;
         }
 
         .wallpaper.app-active {
@@ -255,13 +256,14 @@
             }
         }
 
-        // FIXED: Now applies the home wallpaper immediately on one click
         function applyWP(type) {
-            if (type === 'lock') {
-                lockWP.style.backgroundImage = "url('" + tempImg + "')";
-            } else if (type === 'home') {
-                homeWP.style.backgroundImage = "url('" + tempImg + "')";
-            }
+            // Immediate style update
+            const target = (type === 'lock') ? lockWP : homeWP;
+            target.style.backgroundImage = `url("${tempImg}")`;
+            
+            // Force browser to realize the background changed
+            target.offsetHeight; 
+            
             closeModal();
         }
 
