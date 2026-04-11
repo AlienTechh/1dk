@@ -110,14 +110,6 @@
         .settings-header { padding: 50px 20px 20px; font-size: 24px; font-weight: bold; }
         .settings-item { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; cursor: pointer; }
 
-        #wallpaper-modal {
-            position: absolute; bottom: 0; width: 100%; background: #1c1c1e;
-            border-radius: 25px 25px 0 0; padding: 20px; box-sizing: border-box;
-            transform: translateY(100%); transition: transform 0.4s ease; z-index: 100;
-        }
-        #wallpaper-modal.active { transform: translateY(0); }
-        .modal-btn { padding: 15px; text-align: center; border-bottom: 1px solid #333; color: #007aff; cursor: pointer; }
-
         #toast {
             position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
             background: rgba(255,255,255,0.9); color: black; padding: 8px 16px;
@@ -188,18 +180,11 @@
                     </div>
                 </div>
             </div>
-
-            <div id="wallpaper-modal">
-                <p style="color:#888; text-align:center; font-size:13px; margin-bottom:15px;">Set Wallpaper</p>
-                <div class="modal-btn" onclick="applyWP('lock')">Lockscreen</div>
-                <div class="modal-btn" onclick="applyWP('home')">Home screen</div>
-                <div class="modal-btn" style="color:#ff3b30; border:none;" onclick="closeModal()">Cancel</div>
-            </div>
         </div>
     </div>
 
     <script>
-        let isPowerOn = false, isUnlocked = false, tempImg = "", clickCount = 0, devActive = false;
+        let isPowerOn = false, isUnlocked = false, clickCount = 0, devActive = false;
         const lockWP = document.getElementById('lock-wp'), homeWP = document.getElementById('home-wp');
 
         function togglePower() {
@@ -258,26 +243,17 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = (e) => { 
-                    tempImg = e.target.result; 
-                    document.getElementById('wallpaper-modal').classList.add('active'); 
-                    // FIX: We must clear the input only AFTER the image is fully loaded
+                    const newImg = e.target.result;
+                    // Apply immediately to both
+                    document.documentElement.style.setProperty('--lock-bg', `url("${newImg}")`);
+                    document.documentElement.style.setProperty('--home-bg', `url("${newImg}")`);
+                    
+                    // Clear the input after loading
                     input.value = ""; 
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
-        function applyWP(type) {
-            // FIX: Using CSS variables forces mobile browsers to update instantly
-            if (type === 'lock') {
-                document.documentElement.style.setProperty('--lock-bg', `url("${tempImg}")`);
-            } else if (type === 'home') {
-                document.documentElement.style.setProperty('--home-bg', `url("${tempImg}")`);
-            }
-            closeModal();
-        }
-
-        function closeModal() { document.getElementById('wallpaper-modal').classList.remove('active'); }
 
         function handleDevClick() {
             if (devActive) return;
