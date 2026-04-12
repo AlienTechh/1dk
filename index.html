@@ -41,8 +41,9 @@
         }
 
         :root {
-            --lock-bg: none;
-            --home-bg: none;
+            /* Fixed: Added default background values so they aren't 'none' */
+            --lock-bg: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&q=80&w=2070');
+            --home-bg: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&q=80&w=2070');
         }
 
         .screen {
@@ -51,12 +52,11 @@
             border-radius: 41px; overflow: hidden;
         }
 
-        /* LIVE WALLPAPER VIDEO ELEMENT */
         #live-wp-video {
             position: absolute;
             width: 100%; height: 100%;
             object-fit: cover;
-            z-index: 0; /* Behind static wallpapers */
+            z-index: 0;
             display: none;
         }
 
@@ -70,8 +70,8 @@
             pointer-events: none;
         }
 
-        #lock-wp { background-image: var(--lock-bg); }
-        #home-wp { background-image: var(--home-bg); }
+        #lock-wp { background-image: var(--lock-bg); display: block; }
+        #home-wp { background-image: var(--home-bg); display: none; }
 
         .wallpaper.app-active {
             transform: scale(1.15);
@@ -227,7 +227,7 @@
             <video id="live-wp-video" autoplay loop muted playsinline></video>
             
             <div id="lock-wp" class="wallpaper"></div>
-            <div id="home-wp" class="wallpaper" style="display:none"></div>
+            <div id="home-wp" class="wallpaper"></div>
             <div id="power-overlay"></div>
 
             <div id="lockscreen" class="view">
@@ -288,7 +288,7 @@
             <div id="camera-app" class="view">
                 <video id="camera-feed" autoplay playsinline></video>
                 <canvas id="camera-canvas" style="display:none;"></canvas>
-                <div id="cam-error" class="cam-error">Camera access denied or not found.</div>
+                <div id="cam-error" class="cam-error" style="display:none; color:red; text-align:center;">Camera access denied.</div>
                 <div class="camera-ui">
                     <div class="shutter-btn" onclick="takePhoto()"></div>
                     <div class="flip-btn" onclick="flipCamera()">🔄</div>
@@ -328,6 +328,7 @@
             
             if (isPowerOn) {
                 document.getElementById('lockscreen').style.display = 'flex';
+                // Fixed logic for displaying correct wallpaper
                 lockWP.style.display = isUnlocked ? 'none' : 'block';
                 homeWP.style.display = isUnlocked ? 'block' : 'none';
                 if(liveWP.src) liveWP.play();
@@ -345,6 +346,9 @@
                     homeWP.classList.remove('app-active');
                     isUnlocked = false;
                     goToPage(0);
+                    // Reset to lock screen view for next power on
+                    lockWP.style.display = 'block';
+                    homeWP.style.display = 'none';
                 }, 600);
             }
         }
@@ -434,22 +438,20 @@
 
         function goToPage(num) { document.getElementById('settings-nav').style.transform = `translateX(-${num * 25}%)`; }
 
-        // UPDATED FILE HANDLER FOR LIVE WALLPAPER
         function handleFile(input, type) {
             if (input.files && input.files[0]) {
                 const fileUrl = URL.createObjectURL(input.files[0]);
                 
                 if (type === 'static') {
-                    // Turn off live wallpaper and set image
                     liveWP.style.display = 'none';
                     liveWP.src = "";
                     document.documentElement.style.setProperty('--lock-bg', `url("${fileUrl}")`);
                     document.documentElement.style.setProperty('--home-bg', `url("${fileUrl}")`);
                 } else if (type === 'live') {
-                    // Turn on video and make static layers transparent
                     liveWP.src = fileUrl;
                     liveWP.style.display = 'block';
                     liveWP.play();
+                    // Set z-index of video higher if needed, or make backgrounds transparent
                     document.documentElement.style.setProperty('--lock-bg', `transparent`);
                     document.documentElement.style.setProperty('--home-bg', `transparent`);
                 }
