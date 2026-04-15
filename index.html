@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RandomOS 1.1</title>
+    <title>RandomOS 1.0 Beta</title>
     <style>
         html, body {
             margin: 0; padding: 0;
@@ -15,8 +15,7 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             transition: filter 0.5s ease;
-            /* Prevent web scrolling */
-            touch-action: none;
+            touch-action: none; /* Prevents web scrolling */
         }
 
         /* Ambient Background Glow */
@@ -146,23 +145,15 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
-        /* App Window Zoom Logic */
-        .app-window {
-            display: none; width: 100%; height: 100%;
-            position: absolute; flex-direction: column;
-            color: white; border-radius: 48px; z-index: 40;
-            backdrop-filter: blur(30px);
-            overflow: hidden;
+        /* Settings Design Update */
+        #settings-app {
+            display: flex; background: rgba(15, 15, 15, 0.85); z-index: 40;
+            backdrop-filter: blur(30px); overflow: hidden;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
             transform: scale(0); opacity: 0; pointer-events: none;
+            border-radius: 48px;
         }
-
-        .app-window.open {
-            display: flex;
-            transform: scale(1); opacity: 1; pointer-events: auto;
-        }
-
-        #settings-app { background: rgba(15, 15, 15, 0.85); }
+        #settings-app.open { transform: scale(1); opacity: 1; pointer-events: auto; }
         
         .settings-header { 
             padding: 60px 25px 20px; 
@@ -178,6 +169,7 @@
             cursor: pointer; align-items: center;
             transition: background 0.2s;
         }
+        .settings-item:active { background: rgba(255,255,255,0.05); }
 
         #toast {
             position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
@@ -192,6 +184,7 @@
             left: 50%; transform: translateX(-50%); z-index: 100;
             cursor: pointer; transition: background 0.3s;
         }
+        #home-bar:hover { background: rgba(255, 255, 255, 0.7); }
 
         #time { font-size: 4.2rem; font-weight: 200; letter-spacing: -2px; margin-top: 100px; text-align: center; }
     
@@ -214,6 +207,17 @@
             cursor:pointer; margin-bottom: 12px; transition: all 0.3s;
             border: 1px solid rgba(255,255,255,0.05);
         }
+        .btn-custom:hover { background: rgba(255,255,255,0.12); }
+
+        /* Camera App Window Styles */
+        #camera-app {
+            display: flex; background: #000; z-index: 40;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            transform: scale(0); opacity: 0; pointer-events: none;
+            border-radius: 48px;
+        }
+        #camera-app.open { transform: scale(1); opacity: 1; pointer-events: auto; }
+
     </style>
 </head>
 <body>
@@ -238,19 +242,19 @@
 
             <div id="homescreen" class="view">
                 <div class="app-grid" id="main-grid">
-                    <div class="app-icon-container" id="icon-settings" onclick="openApp('settings-app', this)">
+                    <div class="app-icon-container" onclick="openApp('settings-app', this)">
                         <div class="app-icon" style="background: linear-gradient(135deg, #8e8e93, #48484a);">⚙️</div>
                         <p class="app-label">Settings</p>
                     </div>
 
-                    <div class="app-icon-container" id="icon-camera" onclick="openApp('camera-app', this)">
+                    <div class="app-icon-container" onclick="openApp('camera-app', this)">
                         <div class="app-icon" style="background: linear-gradient(135deg, #5e5e5e, #1c1c1c);">📷</div>
                         <p class="app-label">Camera</p>
                     </div>
                 </div>
             </div>
 
-            <div id="settings-app" class="app-window">
+            <div id="settings-app" class="view">
                 <div class="settings-content-wrapper" id="settings-nav" style="display: flex; width: 400%; height: 100%; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);">
                     <div style="width: 25%;">
                         <div class="settings-header">Settings</div>
@@ -261,7 +265,7 @@
                     <div style="width: 25%;">
                         <div class="settings-header"><span onclick="goToPage(0)" style="color:#ff3b30; cursor:pointer; font-size: 18px;">❮ Back</span></div>
                         <p id="os-text" onclick="handleDevClick()" style="text-align:center; font-size: 22px; margin-top: 20px; font-weight: 700; cursor: pointer;">RandomOS 1.1</p>
-                        <div class="settings-item"><span style="color:#888">Device Name</span><span>Samsung S10</span></div>
+                        <div class="settings-item"><span style="color:#888">Device</span><span>Samsung S10</span></div>
                     </div>
                     <div style="width: 25%;">
                         <div class="settings-header"><span onclick="goToPage(0)" style="color:#ff3b30; cursor:pointer; font-size: 18px;">❮ Back</span></div>
@@ -286,7 +290,7 @@
                 </div>
             </div>
 
-            <div id="camera-app" class="app-window" style="background:#000;">
+            <div id="camera-app" class="view">
                 <video id="camera-feed" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
                 <div style="position: absolute; bottom: 60px; width:100%; display:flex; justify-content:space-around; align-items:center;">
                     <div style="width:40px;"></div>
@@ -307,6 +311,7 @@
 
         let currentStream = null, facingMode = "environment"; 
 
+        // Sounds
         const powerSound = new Audio('mixkit-mouse-click-close-1113.wav');
         const shutterSound = new Audio('mixkit-camera-lens-shutter-1433.wav');
         const unlockSound = new Audio('windows-8-8-1-startup-sound.mp3');
@@ -336,7 +341,8 @@
                     document.getElementById('lockscreen').style.display = 'none';
                     document.getElementById('homescreen').style.display = 'none';
                     document.getElementById('homescreen').classList.remove('unlocked');
-                    document.querySelectorAll('.app-window').forEach(app => app.classList.remove('open'));
+                    document.getElementById('settings-app').classList.remove('open');
+                    document.getElementById('camera-app').classList.remove('open');
                     stopCamera(); 
                     lockWP.classList.remove('app-active');
                     homeWP.classList.remove('app-active');
@@ -358,30 +364,13 @@
             }
         }
 
-        // SPATIAL ZOOM LOGIC
-        function openApp(appId, iconElement) {
-            const app = document.getElementById(appId);
-            const rect = iconElement.getBoundingClientRect();
-            const containerRect = document.querySelector('.screen').getBoundingClientRect();
-            
-            // Calculate relative center of the icon inside the screen
-            const originX = (rect.left + rect.width / 2) - containerRect.left;
-            const originY = (rect.top + rect.height / 2) - containerRect.top;
-
-            app.style.transformOrigin = `${originX}px ${originY}px`;
-            app.classList.add('open');
-            
-            lockWP.classList.add('app-active');
-            homeWP.classList.add('app-active');
-
-            if(appId === 'camera-app') startCamera();
-        }
-
         function handleHomeBar() {
-            const openApp = document.querySelector('.app-window.open');
+            const settings = document.getElementById('settings-app');
+            const camera = document.getElementById('camera-app');
 
-            if (openApp) {
-                openApp.classList.remove('open');
+            if (settings.classList.contains('open') || camera.classList.contains('open')) {
+                settings.classList.remove('open');
+                camera.classList.remove('open');
                 stopCamera(); 
                 lockWP.classList.remove('app-active');
                 homeWP.classList.remove('app-active');
@@ -407,6 +396,30 @@
                 clearInterval(chaosInterval);
                 document.body.style.filter = 'invert(0)';
             }
+        }
+
+        // SPATIAL ZOOM FUNCTION
+        function openApp(appId, iconElement) {
+            const app = document.getElementById(appId);
+            const rect = iconElement.getBoundingClientRect();
+            const containerRect = document.querySelector('.screen').getBoundingClientRect();
+            
+            // Set zoom origin to where the icon is
+            const x = (rect.left + rect.width / 2) - containerRect.left;
+            const y = (rect.top + rect.height / 2) - containerRect.top;
+            
+            app.style.transformOrigin = `${x}px ${y}px`;
+            app.style.display = 'flex';
+            
+            // Short timeout to trigger CSS transition
+            setTimeout(() => {
+                app.classList.add('open');
+            }, 10);
+
+            lockWP.classList.add('app-active');
+            homeWP.classList.add('app-active');
+            
+            if(appId === 'camera-app') startCamera();
         }
 
         async function startCamera() {
