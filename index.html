@@ -13,7 +13,7 @@
         }
 
         body {
-            background-color: #000;
+            background-color: #1a1a1a; /* Changed from pure black to see the phone better when off */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -36,9 +36,10 @@
             border: 4px solid #222; 
             position: relative;
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(255,255,255,0.1);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s;
         }
 
         .top-bezel {
@@ -79,17 +80,27 @@
             top: 140px;
             width: 4px;
             height: 45px;
-            background: #333;
+            background: #444;
             border-radius: 0 4px 4px 0;
             cursor: pointer;
             z-index: 1001;
+            transition: background 0.2s;
         }
+        
+        .power-btn:active { background: #666; }
 
         .screen-content {
             flex: 1;
             width: 100%;
             position: relative;
             background: #000;
+            transition: opacity 0.25s ease-in-out;
+        }
+
+        /* Power Off State */
+        .screen-off {
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         .app-window {
@@ -113,7 +124,6 @@
         #settings { transform-origin: 15% 15%; background: #f2f2f7; padding: 40px 20px; }
         #tiktok { transform-origin: 40% 15%; background: #000; }
 
-        /* TikTok Content */
         .tiktok-feed {
             width: 100%;
             height: 100%;
@@ -128,7 +138,6 @@
             display: block;
         }
 
-        /* Interaction Sidebar */
         .sidebar {
             position: absolute;
             right: 10px;
@@ -148,18 +157,14 @@
             justify-content: center;
             align-items: center;
             font-size: 24px;
-            transition: transform 0.1s;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
         }
 
-        .action-btn:active { transform: scale(0.8); }
-
-        .heart-icon { color: white; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .heart-icon { color: white; }
         .heart-icon.active { color: #ff2d55; }
-
-        .fav-icon { color: white; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .fav-icon { color: white; }
         .fav-icon.active { color: #ffcc00; }
-
-        .comment-icon { color: white; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .comment-icon { color: white; }
 
         .tiktok-ui-overlay {
             position: absolute;
@@ -170,7 +175,6 @@
             pointer-events: none;
         }
 
-        /* Lockscreen & Grid */
         #lockscreen {
             position: absolute;
             inset: 0;
@@ -184,7 +188,7 @@
             transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        #lockscreen.unlocked { transform: translateY(-100%); pointer-events: none; }
+        #lockscreen.unlocked { transform: translateY(-100%); }
 
         .home-grid {
             width: 100%; height: 100%;
@@ -217,14 +221,14 @@
 
     <div class="phone-wrapper">
         <div class="power-btn" onclick="togglePower()"></div>
-        <div class="phone" id="device">
+        <div class="phone">
             <div class="top-bezel">
                 <div class="sensor"></div>
                 <div class="speaker"></div>
                 <div class="sensor"></div>
             </div>
 
-            <div class="screen-content">
+            <div class="screen-content" id="screen">
                 <div class="status-bar">
                     <span id="clock">09:41</span>
                     <span>5G 🔋</span> 
@@ -254,7 +258,7 @@
 
                 <div id="tiktok" class="app-window">
                     <div class="tiktok-feed">
-                        <img class="tiktok-image" src="https://photo-cdn2.icons8.com/u6Kq-Mztr6T6ndoFGgWU8u9KCkCVpR5PrUAwGE4VhoQ/rs:fit:1606:1072/wm:1:re:0:0:0.65/wmid:moose/q:98/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA1L2Q2MmFi/YTFmLWVhNzEtNDlk/ZC04MDRhLTU2OTVh/MzA4M2IyYi5qcGc.jpg" alt="TikTok Post">
+                        <img class="tiktok-image" src="https://photo-cdn2.icons8.com/u6Kq-Mztr6T6ndoFGgWU8u9KCkCVpR5PrUAwGE4VhoQ/rs:fit:1606:1072/wm:1:re:0:0:0.65/wmid:moose/q:98/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA1L2Q2MmFi/YTFmLWVhNzEtNDlk/ZC04MDRhLTU2OTVh/MzA4M2IyYi5qcGc.jpg">
                         
                         <div class="sidebar">
                             <div class="action-btn heart-icon" onclick="toggleLike(this)">❤</div>
@@ -286,6 +290,7 @@
         function toggleLike(el) { el.classList.toggle('active'); }
         function toggleFav(el) { el.classList.toggle('active'); }
 
+        const screen = document.getElementById('screen');
         const lockscreen = document.getElementById('lockscreen');
         const lockBar = document.getElementById('lock-bar');
         const homeTrigger = document.getElementById('home-trigger');
@@ -318,9 +323,14 @@
         function openApp(id) { document.getElementById(id).classList.add('open'); }
 
         function togglePower() {
-            const device = document.getElementById('device');
-            if (isPowerOn) { device.style.opacity = "0"; isPowerOn = false; }
-            else { device.style.opacity = "1"; lockscreen.classList.remove('unlocked'); goHome(); isPowerOn = true; }
+            isPowerOn = !isPowerOn;
+            if (isPowerOn) {
+                screen.classList.remove('screen-off');
+                lockscreen.classList.remove('unlocked');
+                goHome();
+            } else {
+                screen.classList.add('screen-off');
+            }
         }
 
         function updateTime() {
