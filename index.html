@@ -122,17 +122,27 @@
             border-radius: 32px;
             opacity: 0;
             pointer-events: none;
-            /* Perfectly aligns the origin point to the center of the Settings app icon */
-            transform-origin: 16% 15%; 
             transform: scale(0);
-            /* NORMAL RESPONSE: Slower animation for natural feel */
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .app-window.open {
             opacity: 1;
             transform: scale(1);
             pointer-events: auto;
+        }
+
+        /* App Specific Origins */
+        #settings { transform-origin: 16% 15%; }
+        #tiktok { transform-origin: 38% 15%; background: #000; color: white; }
+
+        .none-text {
+            font-size: 40px;
+            font-weight: 800;
+            letter-spacing: -1px;
         }
 
         .status-bar {
@@ -194,9 +204,15 @@
                     <div class="app-icon" onpointerdown="openApp('settings')">
                         <img src="https://img.icons8.com/?size=100&id=a8NHl6SmDbn7&format=png&color=000000" alt="Settings">
                     </div>
+                    <div class="app-icon" onpointerdown="openApp('tiktok')">
+                        <img src="https://img.icons8.com/?size=100&id=118638&format=png&color=000000" alt="TikTok">
+                    </div>
                 </div>
 
                 <div id="settings" class="app-window"></div>
+                <div id="tiktok" class="app-window">
+                    <div class="none-text">none</div>
+                </div>
 
                 <div class="app-home-trigger" id="home-trigger">
                     <div class="home-bar" style="background: rgba(255,255,255,0.3);"></div>
@@ -219,10 +235,6 @@
             activeAction = action;
         };
 
-        const handleMove = (e) => {
-            if (!startY) return;
-        };
-
         const handleEnd = (e) => {
             if (!startY) return;
             const endY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : startY);
@@ -240,17 +252,28 @@
 
         lockBar.addEventListener('mousedown', (e) => handleStart(e, 'unlock'));
         lockBar.addEventListener('touchstart', (e) => handleStart(e, 'unlock'));
-
         homeTrigger.addEventListener('mousedown', (e) => handleStart(e, 'home'));
         homeTrigger.addEventListener('touchstart', (e) => handleStart(e, 'home'));
 
         window.addEventListener('mouseup', handleEnd);
         window.addEventListener('touchend', handleEnd);
-        window.addEventListener('mousemove', handleMove);
 
         function unlock() { lockscreen.classList.add('unlocked'); }
-        function goHome() { document.querySelectorAll('.app-window').forEach(w => w.classList.remove('open')); }
-        function openApp(id) { document.getElementById(id).classList.add('open'); }
+        
+        function goHome() { 
+            const apps = document.querySelectorAll('.app-window');
+            apps.forEach(app => {
+                app.classList.remove('open');
+                // Force a pointer event reset to prevent double-tap bug
+                app.style.pointerEvents = 'none'; 
+            });
+        }
+
+        function openApp(id) { 
+            const app = document.getElementById(id);
+            app.classList.add('open');
+            app.style.pointerEvents = 'auto';
+        }
 
         function togglePower() {
             const device = document.getElementById('device');
