@@ -25,19 +25,22 @@
         }
 
         /* 2. THE HARDWARE */
+        .phone-wrapper {
+            position: relative;
+            padding-right: 12px;
+        }
+
         .phone {
             width: 320px;
             height: 660px;
-            background: #000;
+            background: #111;
             border-radius: 40px;
-            border: 8px solid #333;
+            border: 8px solid #333; 
             position: relative;
             overflow: hidden;
-            transition: border-color 0.4s;
+            box-shadow: 0 0 30px rgba(255,255,255,0.05);
+            transition: background 0.3s ease;
         }
-
-        .phone.power-off { border-color: #000; }
-        .phone.power-off .screen-content { opacity: 0; pointer-events: none; }
 
         .punch-hole {
             position: absolute;
@@ -48,11 +51,12 @@
             background: #000;
             border-radius: 50%;
             z-index: 1000;
+            box-shadow: inset 0 0 3px #111;
         }
 
         .power-btn {
             position: absolute;
-            right: -12px;
+            right: 0;
             top: 120px;
             width: 4px;
             height: 45px;
@@ -62,7 +66,20 @@
             z-index: 1001;
         }
 
-        /* 3. LOCKSCREEN & SWIPE LOGIC */
+        /* 3. SCREEN CONTENT & STATES */
+        .screen-content {
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.25s ease;
+            position: relative;
+            background: #000;
+        }
+
+        .power-off .screen-content {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         #lockscreen {
             position: absolute;
             inset: 0;
@@ -71,24 +88,21 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: 60px 20px 20px;
-            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            justify-content: space-between; /* Space between clock and swipe bar */
+            padding: 80px 20px 20px;
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s;
         }
 
-        .swipe-handle {
-            width: 120px;
-            height: 5px;
-            background: rgba(255,255,255,0.8);
-            border-radius: 10px;
-            cursor: grab;
+        #lockscreen.unlocked {
+            transform: translateY(-100%); /* Swipes away upwards */
+            opacity: 0;
+            pointer-events: none;
         }
 
-        /* 4. HOME SCREEN */
-        .screen-content { width: 100%; height: 100%; position: relative; background: #000; }
-        
+        /* 4. HOME SCREEN & APPS */
         .home-grid {
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             background: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070') center/cover;
             padding: 70px 25px;
             display: grid;
@@ -99,19 +113,20 @@
         .app-icon {
             width: 54px;
             height: 54px;
-            border-radius: 12px;
-            overflow: hidden;
+            border-radius: 14px;
+            overflow: hidden; /* Clips the image to radius */
             cursor: pointer;
-            background: transparent; /* No glass effect */
+            /* Liquid glass removed: no backdrop-filter or bg color */
         }
 
         .app-icon img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
-        /* 5. ZOOM ANIMATION */
+        /* 5. ZOOM ANIMATION (Top-Left Origin) */
         .app-window {
             position: absolute;
             inset: 0;
@@ -122,103 +137,145 @@
             pointer-events: none;
             transform-origin: 20% 15%; 
             transform: scale(0);
-            transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s;
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s;
         }
 
-        .app-window.open { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .app-window.open {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
 
         /* 6. UI ELEMENTS */
         .status-bar {
             position: absolute;
-            top: 15px; width: 100%; padding: 0 30px;
-            display: flex; justify-content: space-between;
-            font-size: 11px; color: white; z-index: 600;
+            top: 15px;
+            width: 100%;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            z-index: 600;
         }
 
+        /* The Swipe/Home Bar */
         .home-bar {
+            width: 100px;
+            height: 4px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Fixed position home bar for apps */
+        .app-home-trigger {
             position: absolute;
-            bottom: 10px; left: 50%; transform: translateX(-50%);
-            width: 100px; height: 4px; background: rgba(255,255,255,0.4);
-            border-radius: 10px; z-index: 700; cursor: pointer;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 700;
         }
     </style>
 </head>
 <body>
 
-    <div class="phone" id="device">
+    <div class="phone-wrapper">
         <div class="power-btn" onclick="togglePower()"></div>
-        <div class="punch-hole"></div>
 
-        <div class="screen-content">
-            <div class="status-bar">
-                <span id="clock">09:41</span>
-                <span style="margin-right: 25px;">5G 🔋</span>
-            </div>
+        <div class="phone" id="device">
+            <div class="punch-hole"></div>
 
-            <div id="lockscreen">
-                <div style="text-align: center; color: white;">
-                    <h1 style="font-size: 50px; font-weight: 200; margin:0;" id="lock-clock">09:41</h1>
-                    <p style="opacity: 0.8; margin:0;">Thursday, Apr 16</p>
+            <div class="screen-content">
+                <div class="status-bar">
+                    <span id="clock">09:41</span>
+                    <span style="margin-right: 25px;">5G 🔋</span> 
                 </div>
-                <div class="swipe-handle" id="swipeHandle"></div>
-            </div>
 
-            <div class="home-grid">
-                <div class="app-icon" onclick="openApp('settings')">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3524/3524659.png" alt="Settings">
+                <div id="lockscreen">
+                    <div style="text-align: center; color: white;">
+                        <h1 style="font-size: 50px; font-weight: 200; margin:0;" id="lock-clock">09:41</h1>
+                        <p style="opacity: 0.8; margin:0;">Thursday, Apr 16</p>
+                    </div>
+                    <div class="home-bar" id="lock-swipe-bar"></div>
+                </div>
+
+                <div class="home-grid">
+                    <div class="app-icon" onclick="openApp('settings')">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3524/3524659.png" alt="Settings">
+                    </div>
+                </div>
+
+                <div id="settings" class="app-window"></div>
+
+                <div class="app-home-trigger">
+                    <div class="home-bar" onclick="goHome()" style="background: rgba(255,255,255,0.3);"></div>
                 </div>
             </div>
-
-            <div id="settings" class="app-window"></div>
-            <div class="home-bar" onclick="goHome()"></div>
         </div>
     </div>
 
     <script>
         let isPowerOn = true;
         let startY = 0;
-        const lockscreen = document.getElementById('lockscreen');
-        const swipeHandle = document.getElementById('swipeHandle');
 
-        // POWER LOGIC
+        // SWIPE TO UNLOCK LOGIC
+        const lockscreen = document.getElementById('lockscreen');
+        const swipeBar = document.getElementById('lock-swipe-bar');
+
+        const handleStart = (e) => {
+            startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        };
+
+        const handleEnd = (e) => {
+            const endY = e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY;
+            // If swiped up more than 50px
+            if (startY - endY > 50) {
+                unlock();
+            }
+        };
+
+        // Attach listeners to the swipe bar for both Mouse and Touch
+        swipeBar.addEventListener('touchstart', handleStart);
+        swipeBar.addEventListener('touchend', handleEnd);
+        swipeBar.addEventListener('mousedown', handleStart);
+        window.addEventListener('mouseup', (e) => {
+            if (startY !== 0) handleEnd(e);
+            startY = 0;
+        });
+
         function togglePower() {
             const device = document.getElementById('device');
+            const lock = document.getElementById('lockscreen');
+            
             if (isPowerOn) {
                 device.classList.add('power-off');
                 isPowerOn = false;
             } else {
                 device.classList.remove('power-off');
-                lockscreen.style.transform = "translateY(0)";
-                goHome();
+                lock.classList.remove('unlocked'); 
+                goHome(); 
                 isPowerOn = true;
             }
         }
 
-        // SWIPE TO UNLOCK LOGIC (PC & MOBILE)
-        const startSwipe = (e) => {
-            startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        };
+        function unlock() {
+            document.getElementById('lockscreen').classList.add('unlocked');
+        }
 
-        const endSwipe = (e) => {
-            let endY = e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY;
-            if (startY - endY > 100) { // If swiped up more than 100px
-                lockscreen.style.transform = "translateY(-100%)";
-            }
-        };
+        function openApp(id) {
+            document.getElementById(id).classList.add('open');
+        }
 
-        swipeHandle.addEventListener('mousedown', startSwipe);
-        window.addEventListener('mouseup', endSwipe);
-        swipeHandle.addEventListener('touchstart', startSwipe);
-        window.addEventListener('touchend', endSwipe);
+        function goHome() {
+            document.querySelectorAll('.app-window').forEach(w => w.classList.remove('open'));
+        }
 
-        // APP LOGIC
-        function openApp(id) { document.getElementById(id).classList.add('open'); }
-        function goHome() { document.querySelectorAll('.app-window').forEach(w => w.classList.remove('open')); }
-
-        // CLOCK
         function updateTime() {
             const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            const time = now.getHours().toString().padStart(2, '0') + ":" + 
+                         now.getMinutes().toString().padStart(2, '0');
             document.getElementById('clock').innerText = time;
             document.getElementById('lock-clock').innerText = time;
         }
