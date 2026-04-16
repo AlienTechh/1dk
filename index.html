@@ -101,7 +101,7 @@
 
         #power-overlay {
             position: absolute; width: 100%; height: 100%;
-            background: black; z-index: 190; pointer-events: none;
+            background: black; z-index: 90; pointer-events: none;
             transition: opacity 0.4s ease-in-out; opacity: 1;
         }
 
@@ -130,7 +130,7 @@
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
         }
         .app-icon-container:active { transform: scale(0.85); }
-        .app-icon-container.dragging { opacity: 0.5; transform: scale(1.1); z-index: 200; }
+        .app-icon-container.dragging { opacity: 0.2; }
 
         .app-icon {
             width: 58px; height: 58px; border-radius: var(--app-radius);
@@ -165,7 +165,7 @@
 
         /* Pixel Search Widget */
         #pixel-search {
-            display: none;
+            display: flex;
             width: 85%;
             height: 45px;
             background: rgba(255, 255, 255, 0.9);
@@ -177,17 +177,14 @@
         }
 
         #settings-app, #camera-app {
-            display: flex; z-index: 40;
+            display: flex; background: rgba(15, 15, 15, 0.85); z-index: 40;
             backdrop-filter: blur(30px); overflow: hidden;
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             transform: scale(0); opacity: 0; pointer-events: none;
             border-radius: 48px;
-            /* TRANSFORM ORIGIN WILL BE SET VIA JS */
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
         }
         #settings-app.open, #camera-app.open { transform: scale(1); opacity: 1; pointer-events: auto; }
-
-        #settings-app { background: rgba(15, 15, 15, 0.85); }
-        #camera-app { background: #000; }
         
         .settings-header { 
             padding: 60px 25px 20px; 
@@ -267,6 +264,7 @@
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .modal-btn { flex: 1; padding: 10px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
 
+        /* Setup Wizard Styles */
         #setup-wizard {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: #fff; z-index: 180; display: none; color: #1a1c1e;
@@ -287,6 +285,7 @@
             margin-top: auto; background: #1a73e8; color: white;
             border: none; padding: 15px; border-radius: 25px; font-weight: bold;
         }
+
     </style>
 </head>
 <body>
@@ -322,8 +321,8 @@
                 <h1 class="setup-title" data-i18n="personalize">Personalize</h1>
                 <p class="setup-desc" data-i18n="look_desc">Choose how your phone looks.</p>
                 <button class="btn-custom" style="color:black; background:#f1f3f4" onclick="document.getElementById('setup-wp').click()" data-i18n="choose_wp">Choose Wallpaper</button>
-                <input type="file" id="setup-wp" hidden accept="image/*" onchange="handleFile(this, 'static')">
-                <button class="setup-btn-next" id="setup-done-btn" onclick="nextSetup(3)" data-i18n="use_default">Use Default</button>
+                <input type="file" id="setup-wp" hidden accept="image/*" onchange="handleFile(this, 'static', true)">
+                <button id="personal-next-btn" class="setup-btn-next" onclick="nextSetup(3)" data-i18n="use_default">Use Default</button>
             </div>
             <div id="step-finish" class="setup-step">
                 <h1 class="setup-title" data-i18n="all_set">All set!</h1>
@@ -333,7 +332,7 @@
         </div>
 
         <div id="boot-animation">
-            <div class="boot-text" id="boot-label">RandomOS</div>
+            <div class="boot-text" id="boot-label">PixelOS</div>
             <div id="boot-subtext" style="font-size: 10px; margin-top: 10px; opacity: 0.6;"></div>
         </div>
 
@@ -350,10 +349,10 @@
 
             <div id="lockscreen" class="view">
                 <p id="time">00:00</p>
-                <p id="swipe-hint" style="text-align:center; font-size: 14px; opacity: 0.7; margin-top: -20px;" data-i18n="swipe_unlock">Swipe up to unlock</p>
+                <p id="swipe-hint" style="text-align:center; font-size: 14px; opacity: 0.7; margin-top: -20px;" data-i18n="swipe_unlock" onclick="unlockPhone()">Swipe up to unlock</p>
             </div>
 
-            <div id="homescreen" class="view" ondragover="event.preventDefault()" ondrop="handleScreenDrop(event)">
+            <div id="homescreen" class="view">
                 <div id="pixel-search">
                     <span style="font-size: 18px; color: #4285F4">G</span>
                     <span style="margin-left: 10px; color: #888; font-size: 13px;" data-i18n="search">Search...</span>
@@ -362,14 +361,14 @@
                     
                     <div class="app-icon-container" draggable="true" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" onclick="openApp('settings-app', this)">
                         <div class="app-icon" id="settings-icon-div" style="background: linear-gradient(135deg, #8e8e93, #48484a);">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dynamic-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         </div>
                         <p class="app-label" data-i18n="settings">Settings</p>
                     </div>
 
                     <div class="app-icon-container" draggable="true" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" onclick="openApp('camera-app', this)">
                         <div class="app-icon" id="camera-icon-div" style="background: linear-gradient(135deg, #5e5e5e, #1c1c1c);">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dynamic-icon"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                         </div>
                         <p class="app-label" data-i18n="camera">Camera</p>
                     </div>
@@ -386,8 +385,8 @@
                     </div>
                     <div style="width: 25%;">
                         <div class="settings-header"><span onclick="goToPage(0)" style="color:#ff3b30; cursor:pointer; font-size: 18px;">❮ <span data-i18n="back">Back</span></span></div>
-                        <div id="os-text" onclick="handleDevClick()" style="text-align:center; font-size: 22px; margin-top: 20px; font-weight: 700; cursor: pointer;">RandomOS 1.1</div>
-                        <div class="settings-item"><span style="color:#888" data-i18n="device">Device</span><span>Samsung S10</span></div>
+                        <p id="os-text" onclick="handleDevClick()" style="text-align:center; font-size: 22px; margin-top: 20px; font-weight: 700; cursor: pointer;">PixelOS 2.0 Gold</p>
+                        <div class="settings-item"><span style="color:#888" data-i18n="device">Device</span><span>Pixel Emulator</span></div>
                     </div>
                     <div style="width: 25%;">
                         <div class="settings-header"><span onclick="goToPage(0)" style="color:#ff3b30; cursor:pointer; font-size: 18px;">❮ <span data-i18n="back">Back</span></span></div>
@@ -401,10 +400,6 @@
                     </div>
                     <div style="width: 25%;">
                         <div class="settings-header"><span onclick="goToPage(0)" style="color:#ff3b30; cursor:pointer; font-size: 18px;">❮ <span data-i18n="back">Back</span></span></div>
-                        <div id="bootloader-row" class="settings-item" onclick="startUnlockSequence()">
-                            <span data-i18n="unlock_bootloader">Unlock Bootloader</span>
-                            <span style="color:#ff3b30; font-size: 12px;">UNSAFE</span>
-                        </div>
                         <div class="settings-item">
                             <span data-i18n="chaos_mode">Chaos Mode</span>
                             <label class="switch">
@@ -417,172 +412,192 @@
             </div>
 
             <div id="camera-app" class="view">
-                <video id="camera-feed" autoplay playsinline style="width:100%; height:100%; object-fit:cover;"></video>
+                <div style="background: #222; height:100%; display:flex; align-items:center; justify-content:center;">
+                    <p>Camera Simulation</p>
+                </div>
                 <div style="position: absolute; bottom: 60px; width:100%; display:flex; justify-content:space-around; align-items:center;">
-                    <div style="width:40px;"></div>
-                    <div style="width:70px; height:70px; background:white; border-radius:50%; border:5px solid rgba(255,255,255,0.3); cursor:pointer;" onclick="takePhoto()"></div>
-                    <div style="font-size:24px; cursor:pointer;" onclick="flipCamera()">🔄</div>
+                    <div style="width:70px; height:70px; background:white; border-radius:50%; border:5px solid rgba(255,255,255,0.3); cursor:pointer;"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let isPowerOn = false, isUnlocked = false, clickCount = 0, devActive = false, chaosInterval;
-        let audioPrimed = false, usingLiveWP = false;
-        let isCustomOS = false;
+        let isPowerOn = false, isUnlocked = false, clickCount = 0, devActive = false;
         let currentLang = 'en';
-        let clickTimer; // Timer for dev options reset
+        let draggedItem = null;
 
         const i18n = {
             en: {
                 welcome: "Welcome", setup_desc: "Setting up your new PixelOS device.", start: "Start",
                 language: "Language", choose_lang: "Choose your preferred language.", lang_toast: "Language set to English",
-                personalize: "Personalize", look_desc: "Choose how your phone looks.", choose_wp: "Choose Wallpaper", use_default: "Use Default",
-                done: "Done", all_set: "All set!", ready_use: "Your device is ready to use.", finish: "Finish",
-                swipe_unlock: "Swipe up to unlock", search: "Search...", settings: "Settings", camera: "Camera",
+                personalize: "Personalize", look_desc: "Choose how your phone looks.", choose_wp: "Choose Wallpaper", use_default: "Use Default", done: "Done",
+                all_set: "All set!", ready_use: "Your device is ready to use.", finish: "Finish",
+                swipe_unlock: "Click to unlock", search: "Search...", settings: "Settings", camera: "Camera",
                 about_phone: "About Phone", customization: "Customization", developer_options: "Developer Options",
-                dev_activated: "Developer options activated", back: "Back", device: "Device", static_wp: "Static Wallpaper", live_wp: "Live Wallpaper",
-                unlock_bootloader: "Unlock Bootloader", chaos_mode: "Chaos Mode", notifications: "Notifications",
-                system_update: "System Update", up_to_date: "Your PixelOS is up to date."
+                back: "Back", device: "Device", static_wp: "Static Wallpaper", live_wp: "Live Wallpaper",
+                chaos_mode: "Chaos Mode", notifications: "Notifications",
+                system_update: "System Update", up_to_date: "Your PixelOS is up to date.",
+                dev_active: "Developer options activated"
             },
             ka: {
                 welcome: "მოგესალმებით", setup_desc: "თქვენი ახალი PixelOS-ის მომართვა.", start: "დაწყება",
                 language: "ენა", choose_lang: "აირჩიეთ სასურველი ენა.", lang_toast: "ენა შეიცვალა: ქართული",
-                personalize: "პერსონალიზაცია", look_desc: "აირჩიეთ როგორ გამოიყურებოდეს ტელეფონი.", choose_wp: "ფონის არჩევა", use_default: "სტანდარტული",
-                done: "დასრულება", all_set: "ყველაფერი მზადაა!", ready_use: "თქვენი მოწყობილობა მზად არის.", finish: "დასრულება",
-                swipe_unlock: "ასწიეთ განსაბლოკად", search: "ძებნა...", settings: "პარამეტრები", camera: "კამერა",
+                personalize: "პერსონალიზაცია", look_desc: "აირჩიეთ როგორ გამოიყურებოდეს ტელეფონი.", choose_wp: "ფონის არჩევა", use_default: "სტანდარტული", done: "მზადაა",
+                all_set: "ყველაფერი მზადაა!", ready_use: "თქვენი მოწყობილობა მზად არის.", finish: "დასრულება",
+                swipe_unlock: "დააწკაპუნეთ განსაბლოკად", search: "ძებნა...", settings: "პარამეტრები", camera: "კამერა",
                 about_phone: "ტელეფონის შესახებ", customization: "ვიზუალი", developer_options: "დეველოპერის პარამეტრები",
-                dev_activated: "დეველოპერის პარამეტრები გააქტიურებულია", back: "უკან", device: "მოწყობილობა", static_wp: "სტატიკური ფონი", live_wp: "ცოცხალი ფონი",
-                unlock_bootloader: "Bootloader-ის განბლოკვა", chaos_mode: "ქაოსის რეჟიმი", notifications: "შეტყობინებები",
-                system_update: "სისტემური განახლება", up_to_date: "PixelOS განახლებულია."
+                back: "უკან", device: "მოწყობილობა", static_wp: "სტატიკური ფონი", live_wp: "ცოცხალი ფონი",
+                chaos_mode: "ქაოსის რეჟიმი", notifications: "შეტყობინებები",
+                system_update: "სისტემური განახლება", up_to_date: "PixelOS განახლებულია.",
+                dev_active: "დეველოპერის პარამეტრები გააქტიურდა"
             }
         };
-
-        const lockWP = document.getElementById('lock-wp'), homeWP = document.getElementById('home-wp');
-        const liveWP = document.getElementById('live-wp-video');
-        const mainGrid = document.getElementById('main-grid');
-
-        // FIX: Developer Options Click Handler
-        function handleDevClick() {
-            if (devActive) return;
-            clickCount++;
-            clearTimeout(clickTimer);
-            
-            if (clickCount >= 7) {
-                devActive = true;
-                document.getElementById('dev-opt-item').style.display = 'flex';
-                showToast(i18n[currentLang].dev_activated);
-                clickCount = 0;
-            } else if (clickCount > 3) {
-                showToast(`You are ${7 - clickCount} steps away from being a developer.`);
-            }
-
-            // Reset counter if no click for 2 seconds
-            clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-        }
-
-        // FIX: Zoom from icon position
-        function openApp(id, iconElement) {
-            const app = document.getElementById(id);
-            if (!app) return;
-
-            // Get icon coordinates to set as transform origin
-            const rect = iconElement.getBoundingClientRect();
-            const containerRect = document.querySelector('.phone-container').getBoundingClientRect();
-            
-            // Calculate relative center of the icon
-            const originX = (rect.left + rect.width / 2) - containerRect.left;
-            const originY = (rect.top + rect.height / 2) - containerRect.top;
-
-            app.style.transformOrigin = `${originX}px ${originY}px`;
-            
-            // Blur wallpaper and open
-            lockWP.classList.add('app-active');
-            homeWP.classList.add('app-active');
-            app.style.display = 'flex';
-            
-            setTimeout(() => {
-                app.classList.add('open');
-            }, 10);
-
-            if (id === 'camera-app') startCamera();
-        }
-
-        function handleHomeBar() {
-            const settings = document.getElementById('settings-app');
-            const camera = document.getElementById('camera-app');
-            
-            settings.classList.remove('open');
-            camera.classList.remove('open');
-            lockWP.classList.remove('app-active');
-            homeWP.classList.remove('app-active');
-            
-            setTimeout(() => {
-                settings.style.display = 'none';
-                camera.style.display = 'none';
-                stopCamera();
-            }, 500);
-        }
 
         function togglePower() {
             isPowerOn = !isPowerOn;
             document.getElementById('power-overlay').style.opacity = isPowerOn ? '0' : '1';
             if (isPowerOn) {
-                document.getElementById('lockscreen').style.display = 'flex';
-                updateWallpaperVisibility();
+                if (!isUnlocked) {
+                    document.getElementById('lockscreen').style.display = 'flex';
+                }
                 updateClock();
             } else {
+                document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
                 isUnlocked = false;
-                document.getElementById('homescreen').classList.remove('unlocked');
-                handleHomeBar();
             }
+        }
+
+        function unlockPhone() {
+            isUnlocked = true;
+            document.getElementById('lockscreen').style.display = 'none';
+            document.getElementById('homescreen').style.display = 'flex';
+            document.getElementById('homescreen').classList.add('unlocked');
+            document.getElementById('home-wp').style.display = 'block';
+        }
+
+        function openApp(appId, element) {
+            const app = document.getElementById(appId);
+            const rect = element.getBoundingClientRect();
+            const phoneRect = document.querySelector('.screen').getBoundingClientRect();
+            
+            // Zoom Animation Logic (Originating from Icon)
+            const originX = ((rect.left + rect.width/2) - phoneRect.left) / phoneRect.width * 100;
+            const originY = ((rect.top + rect.height/2) - phoneRect.top) / phoneRect.height * 100;
+            
+            app.style.transformOrigin = `${originX}% ${originY}%`;
+            app.style.display = 'flex';
+            setTimeout(() => app.classList.add('open'), 10);
+            document.getElementById('home-wp').classList.add('app-active');
+        }
+
+        function handleHomeBar() {
+            document.querySelectorAll('.view').forEach(v => {
+                if (v.id !== 'homescreen' && v.id !== 'lockscreen') {
+                    v.classList.remove('open');
+                    setTimeout(() => v.style.display = 'none', 500);
+                }
+            });
+            document.getElementById('home-wp').classList.remove('app-active');
+        }
+
+        // --- Drag & Drop ---
+        function handleDragStart(e) {
+            draggedItem = e.currentTarget;
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const grid = document.getElementById('main-grid');
+            const target = e.currentTarget;
+            if (target !== draggedItem) {
+                const children = Array.from(grid.children);
+                const draggedIndex = children.indexOf(draggedItem);
+                const targetIndex = children.indexOf(target);
+                if (draggedIndex < targetIndex) {
+                    grid.insertBefore(draggedItem, target.nextSibling);
+                } else {
+                    grid.insertBefore(draggedItem, target);
+                }
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            draggedItem.classList.remove('dragging');
+        }
+
+        // --- Setup Fixes ---
+        function setLang(l) {
+            currentLang = l;
+            applyTranslations();
+            nextSetup(2);
+        }
+
+        function handleFile(input, type, isSetup = false) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const url = `url(${e.target.result})`;
+                    document.documentElement.style.setProperty('--home-bg', url);
+                    document.documentElement.style.setProperty('--lock-bg', url);
+                    if (isSetup) {
+                        const btn = document.getElementById('personal-next-btn');
+                        btn.innerText = i18n[currentLang].done;
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- Developer Options Fix ---
+        function handleDevClick() {
+            clickCount++;
+            if (clickCount >= 5 && !devActive) {
+                devActive = true;
+                const toast = document.getElementById('toast');
+                toast.innerText = i18n[currentLang].dev_active; // CORRECTED TEXT
+                toast.style.opacity = '1';
+                setTimeout(() => toast.style.opacity = '0', 2000);
+                document.getElementById('dev-opt-item').style.display = 'flex';
+            }
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = i18n[currentLang][key] || el.innerText;
+            });
+        }
+
+        function nextSetup(step) {
+            document.querySelectorAll('.setup-step').forEach((s, i) => {
+                s.classList.toggle('active', i === step);
+            });
+            document.getElementById('setup-wizard').style.display = 'flex';
+        }
+
+        function finishSetup() {
+            document.getElementById('setup-wizard').style.display = 'none';
+            if(!isPowerOn) togglePower();
         }
 
         function updateClock() {
             const now = new Date();
             document.getElementById('time').innerText = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            if (isPowerOn) setTimeout(updateClock, 1000);
+            if (isPowerOn) setTimeout(updateClock, 10000);
         }
 
-        // Swipe Unlock Logic
-        let startY;
-        document.querySelector('.screen').addEventListener('touchstart', e => { startY = e.touches[0].clientY; });
-        document.querySelector('.screen').addEventListener('touchend', e => {
-            let endY = e.changedTouches[0].clientY;
-            if (startY - endY > 50 && isPowerOn && !isUnlocked) {
-                isUnlocked = true;
-                document.getElementById('lockscreen').style.display = 'none';
-                document.getElementById('homescreen').style.display = 'flex';
-                setTimeout(() => document.getElementById('homescreen').classList.add('unlocked'), 10);
-                updateWallpaperVisibility();
-            }
-        });
-
-        function updateWallpaperVisibility() {
-            lockWP.style.display = isUnlocked ? 'none' : 'block';
-            homeWP.style.display = isUnlocked ? 'block' : 'none';
+        function goToPage(page) {
+            document.getElementById('settings-nav').style.transform = `translateX(-${page * 25}%)`;
         }
+        
+        // Boot trigger
+        setTimeout(() => {
+            document.getElementById('setup-wizard').style.display = 'flex';
+        }, 500);
 
-        function goToPage(index) {
-            document.getElementById('settings-nav').style.transform = `translateX(-${index * 25}%)`;
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.opacity = 1;
-            setTimeout(() => t.style.opacity = 0, 2000);
-        }
-
-        // Placeholder functions for existing logic
-        function startCamera() {}
-        function stopCamera() {}
-        function toggleNotificationShade() { if(isUnlocked) document.getElementById('notification-shade').classList.toggle('open'); }
-        function handleDragStart(e) { e.currentTarget.classList.add('dragging'); }
-        function handleDragOver(e) { e.preventDefault(); }
-        function handleDrop(e) { e.currentTarget.classList.remove('dragging'); }
-        function handleScreenDrop(e) {}
     </script>
 </body>
 </html>
