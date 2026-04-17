@@ -70,20 +70,19 @@
             transform: translateY(0);
         }
 
-        /* Fixed Zoom Animation Settings */
+        /* App Windows with Dynamic Zoom Animation */
         .app-window {
             position: absolute; inset: 0; background: #fff; z-index: 400;
             opacity: 0; pointer-events: none;
             transform: scale(0);
-            /* cubic-bezier gives it that bouncy "apple" feel */
+            /* Smooth cubic-bezier for a high-end feel */
             transition: transform 0.45s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.25s;
             overflow: hidden;
-            transform-origin: center center;
         }
 
         .app-window.open { 
             opacity: 1; 
-            transform: scale(1) !important; /* Forces scale 1 when open */
+            transform: scale(1); 
             pointer-events: auto; 
         }
         
@@ -91,7 +90,10 @@
         #tiktok { background: #000; }
 
         .tiktok-feed { width: 100%; height: 100%; position: relative; }
-        .tiktok-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tiktok-image { 
+            width: 100%; height: 100%; object-fit: cover; display: block; 
+            pointer-events: none; /* Prevents interaction with the image itself */
+        }
 
         .sidebar {
             position: absolute; right: 10px; bottom: 100px;
@@ -120,7 +122,7 @@
         .home-bar { width: 100px; height: 4px; background: rgba(255,255,255,0.8); border-radius: 10px; }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
     <div class="phone-wrapper">
         <div class="power-btn" onclick="togglePower()"></div>
@@ -141,11 +143,11 @@
                 </div>
 
                 <div class="home-grid">
-                    <div class="app-icon" onpointerdown="openApp('settings')">
-                        <img src="https://img.icons8.com/?size=100&id=a8NHl6SmDbn7&format=png&color=000000" width="100%">
+                    <div class="app-icon" onpointerdown="openApp('settings', this)">
+                        <img src="https://img.icons8.com/?size=100&id=a8NHl6SmDbn7&format=png&color=000000" width="100%" oncontextmenu="return false;">
                     </div>
-                    <div class="app-icon" onpointerdown="openApp('tiktok')">
-                        <img src="https://img.icons8.com/?size=100&id=118638&format=png&color=000000" width="100%">
+                    <div class="app-icon" onpointerdown="openApp('tiktok', this)">
+                        <img src="https://img.icons8.com/?size=100&id=118638&format=png&color=000000" width="100%" oncontextmenu="return false;">
                     </div>
                 </div>
 
@@ -156,7 +158,7 @@
 
                 <div id="tiktok" class="app-window">
                     <div class="tiktok-feed">
-                        <img class="tiktok-image" src="https://photo-cdn2.icons8.com/u6Kq-Mztr6T6ndoFGgWU8u9KCkCVpR5PrUAwGE4VhoQ/rs:fit:1606:1072/wm:1:re:0:0:0.65/wmid:moose/q:98/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA1L2Q2MmFi/YTFmLWVhNzEtNDlk/ZC04MDRhLTU2OTVh/MzA4M2IyYi5qcGc.jpg">
+                        <img class="tiktok-image" src="https://photo-cdn2.icons8.com/u6Kq-Mztr6T6ndoFGgWU8u9KCkCVpR5PrUAwGE4VhoQ/rs:fit:1606:1072/wm:1:re:0:0:0.65/wmid:moose/q:98/czM6Ly9pY29uczgu/bW9vc2UtcHJvZC5h/c3NldHMvYXNzZXRz/L3NhdGEvb3JpZ2lu/YWwvNjA1L2Q2MmFi/YTFmLWVhNzEtNDlk/ZC04MDRhLTU2OTVh/MzA4M2IyYi5qcGc.jpg" oncontextmenu="return false;">
                         <div class="sidebar">
                             <div class="action-btn heart-icon" onclick="toggleLike(this)">❤</div>
                             <div class="action-btn comment-icon">🗨</div>
@@ -191,7 +193,6 @@
             if (!isPowerOn) return;
             isDragging = true;
             startY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-            // Disable transition ONLY for lockscreen so it follows finger
             if (!isUnlocked) lockscreen.style.transition = 'none';
         };
 
@@ -199,8 +200,6 @@
             if (!isDragging) return;
             const currentY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             const deltaY = currentY - startY;
-
-            // Visual sliding ONLY for lockscreen
             if (!isUnlocked && deltaY < 0) {
                 lockscreen.style.transform = `translateY(${deltaY}px)`;
             }
@@ -213,7 +212,6 @@
             const totalTravel = startY - endY;
 
             if (!isUnlocked) {
-                // Lockscreen Logic: Slide back or Unlock
                 lockscreen.style.transition = 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1)';
                 if (totalTravel > 100) { 
                     lockscreen.style.transform = 'translateY(-100%)';
@@ -222,10 +220,7 @@
                     lockscreen.style.transform = 'translateY(0)';
                 }
             } else {
-                // App Logic: If we are in an app, simple flick up triggers Zoom Out
-                if (totalTravel > 50) {
-                    goHome();
-                }
+                if (totalTravel > 50) goHome();
             }
         };
 
@@ -233,13 +228,21 @@
         window.addEventListener('pointermove', handleMove);
         window.addEventListener('pointerup', handleEnd);
 
-        function openApp(id) { 
+        // Calculate icon position so app grows from that spot
+        function openApp(id, iconElement) { 
             const app = document.getElementById(id);
+            const iconRect = iconElement.getBoundingClientRect();
+            const screenRect = screen.getBoundingClientRect();
+
+            // Find center of icon relative to the screen
+            const originX = (iconRect.left + iconRect.width / 2) - screenRect.left;
+            const originY = (iconRect.top + iconRect.height / 2) - screenRect.top;
+
+            app.style.transformOrigin = `${originX}px ${originY}px`;
             app.classList.add('open');
         }
 
         function goHome() { 
-            // By removing "open", CSS takes over and scales it to 0
             document.querySelectorAll('.app-window').forEach(w => {
                 w.classList.remove('open');
             });
