@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HyperOS Web - Instant Response</title>
+    <title>HyperOS - Infinite Smoothness Test</title>
     <style>
         :root {
             --phone-width: 300px;
@@ -12,158 +12,91 @@
             --icon-radius: 16px;
         }
 
-        /* Prevent all browser-default highlights and scrolling */
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            overscroll-behavior: none;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; overscroll-behavior: none;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            background: #0a0a0a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Inter', -apple-system, sans-serif;
+            user-select: none; -webkit-user-select: none;
+            background: #0a0a0a; display: flex;
+            justify-content: center; align-items: center;
+            font-family: 'Inter', sans-serif;
         }
 
         .power-btn {
-            position: absolute;
-            right: -15px;
-            top: 120px;
-            width: 5px;
-            height: 50px;
-            background: #333;
-            border-radius: 0 4px 4px 0;
-            cursor: pointer;
-            z-index: 200;
+            position: absolute; right: -15px; top: 120px;
+            width: 5px; height: 50px; background: #333;
+            border-radius: 0 4px 4px 0; cursor: pointer; z-index: 200;
         }
 
         #phone-container {
-            width: var(--phone-width);
-            height: var(--phone-height);
-            background: #000;
-            border: 10px solid #282828;
-            border-radius: 50px;
-            position: relative;
-            overflow: hidden;
+            width: var(--phone-width); height: var(--phone-height);
+            background: #000; border: 10px solid #282828;
+            border-radius: 50px; position: relative; overflow: hidden;
             box-shadow: 0 25px 50px rgba(0,0,0,0.8);
-            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s;
-            touch-action: none;
+            transition: opacity 0.4s ease; touch-action: none;
         }
 
-        .screen-off {
-            opacity: 0;
-            transform: scale(0.98);
-            pointer-events: none;
-        }
+        .screen-off { opacity: 0; pointer-events: none; }
 
         .punch-hole {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 12px;
-            height: 12px;
-            background: #000;
-            border: 2px solid #1a1a1a;
-            border-radius: 50%;
-            z-index: 100;
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            width: 12px; height: 12px; background: #000;
+            border: 2px solid #1a1a1a; border-radius: 50%; z-index: 100;
         }
 
         .layer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s;
+            position: absolute; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
         #lockscreen {
             background-image: url('https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1000&auto=format&fit=crop');
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 70px;
-            color: white;
+            z-index: 50; display: flex; flex-direction: column; align-items: center;
+            padding-top: 70px; color: white;
         }
 
         #homescreen {
             background-image: url('https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?q=80&w=1000&auto=format&fit=crop');
-            z-index: 40;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(6, 1fr);
-            gap: 15px;
-            padding: 50px 20px;
-            box-sizing: border-box;
+            z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(6, 1fr); gap: 15px;
+            padding: 50px 20px; box-sizing: border-box;
         }
 
         .app-icon {
-            width: 52px;
-            height: 52px;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(15px);
-            border-radius: var(--icon-radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            cursor: pointer;
+            width: 52px; height: 52px; background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(15px); border-radius: var(--icon-radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; transition: transform 0.1s;
         }
 
+        .app-icon:active { transform: scale(0.9); }
+
         #app-window {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 60;
-            transform: scale(0);
-            opacity: 0;
-            border-radius: var(--app-radius);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 60; transform: scale(0); opacity: 0;
+            border-radius: var(--app-radius); pointer-events: none;
             transition: 
                 transform 0.5s cubic-bezier(0.32, 0.72, 0, 1), 
                 opacity 0.2s, 
                 border-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; color: white;
         }
 
         #app-window.open {
-            transform: scale(1);
-            opacity: 1;
-            border-radius: 0px;
+            transform: scale(1); opacity: 1; border-radius: 0px; pointer-events: auto;
         }
 
         .nav-handle-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            z-index: 150;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            padding-bottom: 8px;
-            cursor: grab;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
+            z-index: 150; display: flex; justify-content: center;
+            align-items: flex-end; padding-bottom: 8px; cursor: grab;
         }
 
         .nav-bar {
-            width: 110px;
-            height: 4px;
-            background: rgba(255,255,255,0.7);
-            border-radius: 10px;
-            transition: transform 0.1s ease-out, background 0.3s;
+            width: 110px; height: 4px; background: rgba(255,255,255,0.7);
+            border-radius: 10px; transition: background 0.3s;
         }
 
         .dark-bar { background: rgba(0,0,0,0.4); }
@@ -174,7 +107,6 @@
 
     <div style="position: relative;">
         <div class="power-btn" id="pwr-btn"></div>
-
         <div id="phone-container">
             <div class="punch-hole"></div>
             
@@ -213,29 +145,33 @@
         let startY = 0;
         let isDragging = false;
 
-        // --- INSTANT APP OPENING ---
+        // --- INSTANT & INTERRUPTIBLE OPENING ---
         document.querySelectorAll('.app-icon').forEach(icon => {
             icon.addEventListener('pointerdown', (e) => {
                 if (!isPowerOn || !lockscreen.classList.contains('hidden_ls')) return;
                 
-                const name = icon.getAttribute('data-name');
-                const color = icon.getAttribute('data-color');
+                // Forces any current transition to jump/reset for the new animation
+                appWindow.classList.remove('open');
                 
-                const rect = icon.getBoundingClientRect();
-                const phoneRect = phone.getBoundingClientRect();
-                
-                // Set zoom origin to icon position
-                const x = ((rect.left + rect.width/2) - phoneRect.left) / phoneRect.width * 100;
-                const y = ((rect.top + rect.height/2) - phoneRect.top) / phoneRect.height * 100;
-                
-                appWindow.style.transformOrigin = `${x}% ${y}%`;
-                appWindow.style.backgroundColor = color;
-                document.getElementById('app-title').innerText = name;
-                appWindow.classList.add('open');
+                // Minimal delay to let the DOM recognize the removal before re-opening
+                requestAnimationFrame(() => {
+                    const name = icon.getAttribute('data-name');
+                    const color = icon.getAttribute('data-color');
+                    const rect = icon.getBoundingClientRect();
+                    const phoneRect = phone.getBoundingClientRect();
+                    
+                    const x = ((rect.left + rect.width/2) - phoneRect.left) / phoneRect.width * 100;
+                    const y = ((rect.top + rect.height/2) - phoneRect.top) / phoneRect.height * 100;
+                    
+                    appWindow.style.transformOrigin = `${x}% ${y}%`;
+                    appWindow.style.backgroundColor = color;
+                    document.getElementById('app-title').innerText = name;
+                    appWindow.classList.add('open');
+                });
             });
         });
 
-        // --- SWIPE GESTURE LOGIC ---
+        // --- SWIPE GESTURE ---
         const startAction = (e) => {
             if (!isPowerOn) return;
             isDragging = true;
@@ -247,7 +183,7 @@
             const currentY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             const diff = startY - currentY;
             if (diff > 0) {
-                visualBar.style.transform = `translateY(-${Math.min(diff/3, 25)}px)`;
+                visualBar.style.transform = `translateY(-${Math.min(diff/3, 20)}px)`;
             }
         };
 
@@ -255,15 +191,14 @@
             if (!isDragging) return;
             const endY = (e.clientY === undefined) ? e.changedTouches[0].clientY : e.clientY;
             
-            if (startY - endY > 60) {
+            if (startY - endY > 50) {
                 if (!lockscreen.classList.contains('hidden_ls')) {
                     lockscreen.classList.add('hidden_ls');
                     visualBar.classList.add('dark-bar');
-                } else if (appWindow.classList.contains('open')) {
+                } else {
                     appWindow.classList.remove('open');
                 }
             }
-            
             visualBar.style.transform = `translateY(0)`;
             isDragging = false;
         };
@@ -272,7 +207,7 @@
         window.addEventListener('pointermove', moveAction);
         window.addEventListener('pointerup', endAction);
 
-        // --- POWER BUTTON ---
+        // --- POWER SYSTEM ---
         pwrBtn.addEventListener('click', () => {
             if (isPowerOn) {
                 appWindow.classList.remove('open');
