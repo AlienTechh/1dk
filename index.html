@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HyperOS Pro - Fluid Reopen Fix</title>
+    <title>HyperWeb3</title>
     <style>
         :root {
             --phone-width: 350px; 
@@ -177,7 +177,15 @@
 
         #app-window.open { transform: scale(1); opacity: 1; border-radius: calc(var(--inner-radius) - 8px); pointer-events: auto; }
 
-        .settings-container { width: 100%; height: 100%; position: relative; display: none; }
+        /* FIX: Removed display: none and replaced with opacity/pointer-events to stop layout thrashing */
+        .settings-container { 
+            width: 100%; height: 100%; position: absolute; inset: 0; 
+            opacity: 0; pointer-events: none;
+        }
+        .settings-container.active { 
+            opacity: 1; pointer-events: auto; 
+        }
+
         .settings-view { 
             position: absolute; inset: 0; padding: 60px 20px; 
             transition: opacity 0.4s ease, transform 0.4s ease;
@@ -317,13 +325,16 @@
                 appWindow.classList.remove('open');
                 void appWindow.offsetWidth; 
 
+                // FIX: Swap active class instead of display: block to prevent UI stutter/layout thrash
                 if (appName === "Settings") {
-                    settingsUI.style.display = "block";
-                    // FORCE SETTINGS UI RESET: ensure it doesn't hide during reopen
+                    settingsUI.classList.add('active');
+                    // Force pages back to default instantly
                     document.getElementById('main-settings').classList.add('fade-in');
                     document.getElementById('main-settings').classList.remove('fade-out');
+                    document.getElementById('about-phone-page').classList.add('fade-out');
+                    document.getElementById('about-phone-page').classList.remove('fade-in');
                 } else {
-                    settingsUI.style.display = "none";
+                    settingsUI.classList.remove('active');
                 }
 
                 const rect = icon.getBoundingClientRect();
