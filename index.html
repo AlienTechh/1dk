@@ -6,71 +6,80 @@
     <title>Kvatia Simulator</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial Black', sans-serif; touch-action: none; }
+        
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 9999; pointer-events: none;
+        }
+
         .overlay {
             position: absolute; width: 100%; height: 100%; 
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 1000; background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%); color: white;
+            color: white; pointer-events: auto;
         }
-        #menu { display: flex; }
+        
+        #menu { 
+            display: flex; 
+            background: url('https://cdn.oreateai.com/gpt-image/1777394306_113542062.png') no-repeat center center;
+            background-size: cover;
+        }
+
+        #menu h1 { font-size: 55px; color: #f6ca2d; text-shadow: 0 0 20px rgba(0,0,0,1); margin: 0; }
         #gui { position: absolute; top: 20px; right: 20px; color: #f6ca2d; text-shadow: 3px 3px #000; z-index: 10; pointer-events: none; display: none; }
-        .btn { background: #499149; color: white; border: 2px solid #fff; padding: 12px 40px; font-size: 20px; cursor: pointer; margin: 8px; border-radius: 8px; width: 250px; }
+        .btn { background: #499149; color: white; border: 2px solid #fff; padding: 12px 40px; font-size: 20px; cursor: pointer; margin: 8px; border-radius: 8px; width: 250px; text-transform: uppercase; }
+        .btn:active { transform: scale(0.95); }
+
         .loader-container { width: 300px; height: 10px; border: 1px solid #f6ca2d; margin-top: 20px; border-radius: 5px; }
         #loader-fill { width: 0%; height: 100%; background: #f6ca2d; }
 
-        /* Mobile Controls */
-        .joystick-zone { position: absolute; bottom: 0; width: 50%; height: 60%; z-index: 500; display: none; }
-        #left-zone { left: 0; }
-        #right-zone { right: 0; }
-        
-        /* Fixed: Made stick base visible with higher z-index */
-        .stick-base { position: absolute; width: 100px; height: 100px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none; }
-        .stick-knob { position: absolute; width: 40px; height: 40px; background: #f6ca2d; border-radius: 50%; top: 30px; left: 30px; opacity: 0.9; }
-
-        /* Fixed: Higher z-index and forced display when game starts */
+        /* Mobile UI */
+        #mobile-walk-ui {
+            position: absolute; bottom: 40px; left: 40px; width: 140px; height: 140px;
+            background: rgba(140, 120, 255, 0.2); border: 4px solid rgba(160, 140, 255, 0.5);
+            border-radius: 15px; display: none; z-index: 50; pointer-events: auto;
+        }
         #mobile-pause-btn {
-            position: absolute; top: 20px; left: 20px; width: 60px; height: 60px;
-            background: rgba(0,0,0,0.5); border: 2px solid #f6ca2d; border-radius: 12px;
-            color: #f6ca2d; font-size: 35px; display: none; align-items: center; justify-content: center;
-            z-index: 2000; cursor: pointer; -webkit-tap-highlight-color: transparent;
+            position: absolute; top: 20px; left: 20px; width: 50px; height: 50px;
+            background: rgba(255,255,255,0.2); border: 2px solid white; border-radius: 10px;
+            color: white; font-size: 30px; display: none; align-items: center; justify-content: center;
+            z-index: 101; cursor: pointer; pointer-events: auto;
         }
     </style>
 </head>
 <body>
 
-    <div id="mobile-pause-btn" onclick="window.pauseGameMobile()">☰</div>
+    <div id="ui-layer">
+        <div id="mobile-pause-btn" onclick="window.pauseGame()">☰</div>
 
-    <div id="menu" class="overlay">
-        <h1 style="font-size: 55px; color: #f6ca2d; margin: 0; text-shadow: 0 0 20px rgba(246,202,45,0.5);">Kvatia Simulator</h1>
-        <button class="btn" onclick="startGame()">PLAY GAME</button>
-        <button class="btn" style="background:#333;" onclick="openSettings('menu')">SETTINGS</button>
+        <div id="menu" class="overlay">
+            <h1>Kvatia Simulator</h1>
+            <button class="btn" onclick="startGame()">PLAY GAME</button>
+            <button class="btn" style="background:#333;" onclick="openSettings('menu')">SETTINGS</button>
+        </div>
+
+        <div id="settings-menu" class="overlay" style="background: rgba(0,0,0,0.95);">
+            <h1>SETTINGS</h1>
+            <label>Camera Sensitivity</label>
+            <input type="range" id="sens-slider" min="1" max="20" value="10" style="width:200px">
+            <p>Motion Blur: <span style="color:#0f0">ON</span></p>
+            <button class="btn" onclick="closeSettings()">SAVE & BACK</button>
+        </div>
+
+        <div id="pause-overlay" class="overlay" style="background: rgba(0,0,0,0.85);">
+            <h1 style="color: #f6ca2d;">PAUSED</h1>
+            <button class="btn" onclick="resumeGame()">RESUME</button>
+            <button class="btn" style="background:#333;" onclick="openSettings('pause')">SETTINGS</button>
+            <button class="btn" style="background:#a32a2a;" onclick="location.reload()">QUIT TO MENU</button>
+        </div>
+
+        <div id="loading" class="overlay" style="background: #000;">
+            <h2>RENDERING WORLD...</h2>
+            <div class="loader-container"><div id="loader-fill"></div></div>
+        </div>
     </div>
 
-    <div id="settings-menu" class="overlay">
-        <h1>SETTINGS</h1>
-        <label>Camera Sensitivity</label>
-        <input type="range" id="sens-slider" min="1" max="20" value="10" style="width:200px">
-        <p>Motion Blur: <span style="color:#0f0">ON</span></p>
-        <button class="btn" onclick="closeSettings()">SAVE & BACK</button>
-    </div>
-
-    <div id="pause-overlay" class="overlay">
-        <h1 style="color: #f6ca2d;">PAUSED</h1>
-        <button class="btn" onclick="resumeGame()">RESUME</button>
-        <button class="btn" style="background:#333;" onclick="openSettings('pause')">SETTINGS</button>
-        <button class="btn" style="background:#a32a2a; font-size: 14px; width: 150px;" onclick="quitToMenu()">QUIT TO MENU</button>
-    </div>
-
-    <div id="loading" class="overlay">
-        <h2>RENDERING WORLD...</h2>
-        <div class="loader-container"><div id="loader-fill"></div></div>
-    </div>
-
-    <div id="gui">
-        <h1 style="margin:0; font-size: 40px;">$1,000,000</h1>
-    </div>
-
-    <div id="left-zone" class="joystick-zone"><div id="move-stick" class="stick-base"><div class="stick-knob"></div></div></div>
-    <div id="right-zone" class="joystick-zone"><div id="look-stick" class="stick-base"><div class="stick-knob"></div></div></div>
+    <div id="gui"><h1 style="margin:0; font-size: 40px;">$1,000,000</h1></div>
+    <div id="mobile-walk-ui"></div>
 
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -79,183 +88,141 @@
     <script type="module">
         import * as THREE from 'three';
 
-        let returnTarget = 'menu';
-        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || (window.innerWidth < 800);
+        let isPlaying = false, sensitivity = 0.004, returnTarget = 'menu', walkCycle = 0;
+        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
-        window.pauseGameMobile = () => {
-            isPlaying = false;
-            document.getElementById('pause-overlay').style.display = 'flex';
-            document.getElementById('mobile-pause-btn').style.display = 'none';
-        };
-
+        // --- CORE FUNCTIONS ---
         window.startGame = () => {
-            if (isMobile && document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
             document.getElementById('menu').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
+            gun.visible = false; 
             let p = 0;
             const iv = setInterval(() => {
-                p += 5; document.getElementById('loader-fill').style.width = p+'%';
+                p += 10; document.getElementById('loader-fill').style.width = p+'%';
                 if(p>=100) { 
                     clearInterval(iv); 
                     document.getElementById('loading').style.display='none'; 
                     document.getElementById('gui').style.display='block'; 
-                    // Forced display for mobile controls
                     if(isMobile) {
-                        document.getElementById('left-zone').style.display = 'block';
-                        document.getElementById('right-zone').style.display = 'block';
+                        document.getElementById('mobile-walk-ui').style.display = 'block';
                         document.getElementById('mobile-pause-btn').style.display = 'flex';
                     }
                     window.resumeGame(); 
                 }
-            }, 40);
+            }, 30);
         };
 
-        window.openSettings = (t) => { returnTarget = t; document.querySelectorAll('.overlay').forEach(e=>e.style.display='none'); document.getElementById('settings-menu').style.display='flex'; };
-        window.closeSettings = () => { document.getElementById('settings-menu').style.display='none'; document.getElementById(returnTarget==='menu'?'menu':'pause-overlay').style.display='flex'; sensitivity = document.getElementById('sens-slider').value * 0.0004; };
-        
-        window.resumeGame = () => { 
-            if(!isMobile) document.body.requestPointerLock(); 
-            document.getElementById('pause-overlay').style.display='none'; 
-            if(isMobile) document.getElementById('mobile-pause-btn').style.display = 'flex';
-            isPlaying = true; 
+        window.resumeGame = () => {
+            if(!isMobile) document.body.requestPointerLock();
+            document.querySelectorAll('.overlay').forEach(e=>e.style.display='none');
+            isPlaying = true;
         };
 
-        window.quitToMenu = () => { 
-            isPlaying = false; 
-            document.getElementById('pause-overlay').style.display='none'; 
-            document.getElementById('gui').style.display='none'; 
-            document.getElementById('menu').style.display='flex'; 
-            document.getElementById('mobile-pause-btn').style.display = 'none';
-            if(isMobile && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); 
+        window.pauseGame = () => {
+            isPlaying = false;
+            document.getElementById('pause-overlay').style.display = 'flex';
         };
 
+        window.openSettings = (t) => { 
+            returnTarget = t; 
+            document.querySelectorAll('.overlay').forEach(e=>e.style.display='none'); 
+            document.getElementById('settings-menu').style.display='flex'; 
+        };
+
+        window.closeSettings = () => { 
+            document.getElementById('settings-menu').style.display='none'; 
+            document.getElementById(returnTarget==='menu'?'menu':'pause-overlay').style.display='flex'; 
+            sensitivity = document.getElementById('sens-slider').value * 0.0004; 
+        };
+
+        // THE FIX: Listen for Esc key (Pointer Lock Change)
+        document.addEventListener('pointerlockchange', () => {
+            if (!document.pointerLockElement && isPlaying) {
+                window.pauseGame();
+            }
+        });
+
+        // --- THREE JS ENGINE ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x7ec0ee);
-        scene.fog = new THREE.FogExp2(0x7ec0ee, 0.004);
-
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.autoClearColor = false; 
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.7));
         const sun = new THREE.DirectionalLight(0xffffff, 1.8);
-        sun.position.set(50, 100, 50);
-        sun.castShadow = true;
-        sun.shadow.mapSize.width = 2048;
+        sun.position.set(50, 100, 50); sun.castShadow = true;
         scene.add(sun);
 
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 }));
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x444444 }));
+        floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
         scene.add(floor);
 
+        // RESTORED BUILDINGS
         const buildings = [];
-        for(let i=0; i<20; i++) {
-            const h = 20 + Math.random() * 40;
+        for(let i=0; i<25; i++) {
+            const h = 20 + Math.random() * 45;
             const b = new THREE.Mesh(new THREE.BoxGeometry(15, h, 15), new THREE.MeshStandardMaterial({ color: 0x8b7d6b }));
-            b.position.set(Math.cos(i)*70, h/2, Math.sin(i)*70);
-            b.castShadow = true; b.receiveShadow = true;
-            scene.add(b); buildings.push(b);
+            b.position.set(Math.cos(i)*80, h/2, Math.sin(i)*80);
+            b.castShadow = true; scene.add(b); buildings.push(b);
         }
 
+        // KVATIA
         const kvatia = new THREE.Group();
-        const yellow = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.2 });
+        const animGroup = new THREE.Group();
+        kvatia.add(animGroup);
+        const yellow = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
         const body = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), yellow);
-        body.scale.set(1, 0.8, 1.2); body.castShadow = true; kvatia.add(body);
+        body.scale.set(1, 0.8, 1.2); animGroup.add(body);
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), yellow);
-        head.position.set(0, 1.2, 0.6); head.castShadow = true; kvatia.add(head);
-        const beak = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.7), new THREE.MeshStandardMaterial({ color: 0xff6600 }));
-        beak.position.set(0, 1.1, 1.2); kvatia.add(beak);
-        const eMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-        const eL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), eMat);
-        eL.position.set(0.3, 1.4, 1.1); kvatia.add(eL);
-        const eR = eL.clone(); eR.position.x = -0.3; kvatia.add(eR);
+        head.position.set(0, 1.2, 0.6); animGroup.add(head);
+
+        const gun = new THREE.Group();
+        const gBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1.2), new THREE.MeshStandardMaterial({color: 0x222222}));
+        gun.add(gBarrel); gun.position.set(1.1, 0.2, 0.6);
+        animGroup.add(gun);
         scene.add(kvatia);
-
-        let isPlaying = false, sensitivity = 0.004;
-        const keys = { w:false, a:false, s:false, d:false };
-        const touchMove = { x: 0, y: 0 };
-        const touchLook = { x: 0, y: 0 };
-        let yaw = 0, pitch = 0.5;
-
-        document.addEventListener('pointerlockchange', () => { if(!document.pointerLockElement && isPlaying && !isMobile && document.getElementById('settings-menu').style.display !== 'flex') document.getElementById('pause-overlay').style.display='flex'; });
-        document.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
-        document.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
-        document.addEventListener('mousemove', (e) => { if(document.pointerLockElement) { yaw -= e.movementX * sensitivity; pitch = Math.max(0.1, Math.min(1.4, pitch + e.movementY * sensitivity)); } });
-
-        function initJoystick(zoneId, stickId, callback) {
-            const zone = document.getElementById(zoneId);
-            const stick = document.getElementById(stickId);
-            const knob = stick.querySelector('.stick-knob');
-            zone.addEventListener('touchstart', (e) => { 
-                const t = e.touches[0]; 
-                stick.style.display = 'block'; 
-                stick.style.left = t.clientX + 'px'; 
-                stick.style.top = t.clientY + 'px'; 
-                stick.dataset.ox = t.clientX; 
-                stick.dataset.oy = t.clientY; 
-            });
-            zone.addEventListener('touchmove', (e) => { 
-                e.preventDefault(); 
-                const t = Array.from(e.touches).find(touch => touch.target.closest('#' + zoneId)); 
-                if(!t) return; 
-                const dx = t.clientX - stick.dataset.ox, dy = t.clientY - stick.dataset.oy; 
-                const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 40), angle = Math.atan2(dy, dx); 
-                const lx = Math.cos(angle) * dist, ly = Math.sin(angle) * dist; 
-                knob.style.transform = `translate(${lx}px, ${ly}px)`; 
-                callback(lx/40, ly/40); 
-            });
-            zone.addEventListener('touchend', () => { stick.style.display = 'none'; callback(0, 0); });
-        }
-        
-        // Initialize joysticks regardless of strict mobile check for testing
-        initJoystick('left-zone', 'move-stick', (x, y) => { touchMove.x = x; touchMove.y = y; }); 
-        initJoystick('right-zone', 'look-stick', (x, y) => { touchLook.x = x; touchLook.y = y; });
 
         const blurScene = new THREE.Scene();
         const blurMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15 }));
         blurMesh.material.depthTest = false; blurScene.add(blurMesh);
 
+        const keys = { w:false, a:false, s:false, d:false };
+        const touchMove = { x: 0, y: 0 };
+        let yaw = 0, pitch = 0.5;
+
+        document.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+        document.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+        document.addEventListener('mousemove', (e) => { if(document.pointerLockElement) { yaw -= e.movementX * sensitivity; pitch = Math.max(0.1, Math.min(1.4, pitch + e.movementY * sensitivity)); } });
+
         function animate() {
             requestAnimationFrame(animate);
             if (isPlaying) {
-                const speed = 0.4;
-                const dx = Math.sin(yaw), dz = Math.cos(yaw);
-                
-                // Movement logic (Fixed W=Front, S=Back)
                 const moveForward = (keys.w ? -1 : 0) + (keys.s ? 1 : 0) + touchMove.y;
                 const moveRight = (keys.d ? 1 : 0) - (keys.a ? 1 : 0) + touchMove.x;
+                const dx = Math.sin(yaw), dz = Math.cos(yaw);
 
-                let nx = kvatia.position.x + (dx * moveForward * speed) + (dz * moveRight * speed);
-                let nz = kvatia.position.z + (dz * moveForward * speed) - (dx * moveRight * speed);
+                kvatia.position.x += (dx * moveForward * 0.4) + (dz * moveRight * 0.4);
+                kvatia.position.z += (dz * moveForward * 0.4) - (dx * moveRight * 0.4);
 
-                // Camera rotation via right joystick/touch
-                yaw -= touchLook.x * 0.05;
-                pitch = Math.max(0.1, Math.min(1.4, pitch + touchLook.y * 0.05));
-
-                const kBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(nx, 1, nz), new THREE.Vector3(2,2,2));
-                let collide = false;
-                for(let b of buildings) if(kBox.intersectsBox(new THREE.Box3().setFromObject(b))) collide = true;
-                if(!collide) { kvatia.position.x = nx; kvatia.position.z = nz; }
-                
-                kvatia.rotation.y = yaw + Math.PI;
-                camera.position.set(kvatia.position.x + dx*20, kvatia.position.y + pitch*20, kvatia.position.z + dz*20);
-                camera.lookAt(kvatia.position.x, kvatia.position.y+1, kvatia.position.z);
+                if(Math.abs(moveForward) > 0.1 || Math.abs(moveRight) > 0.1) {
+                    walkCycle += 0.2;
+                    animGroup.position.y = Math.abs(Math.sin(walkCycle)) * 0.2;
+                    animGroup.rotation.z = Math.sin(walkCycle) * 0.15;
+                }
             }
+            kvatia.rotation.y = yaw + Math.PI;
+            camera.position.set(kvatia.position.x + Math.sin(yaw)*20, kvatia.position.y + pitch*20, kvatia.position.z + Math.cos(yaw)*20);
+            camera.lookAt(kvatia.position.x, kvatia.position.y+1, kvatia.position.z);
+            
             renderer.autoClear = false;
             renderer.render(blurScene, new THREE.Camera()); 
             renderer.render(scene, camera); 
         }
         animate();
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
