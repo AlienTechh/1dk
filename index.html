@@ -38,6 +38,11 @@
             background: rgba(140, 120, 255, 0.2); border: 4px solid rgba(160, 140, 255, 0.5);
             border-radius: 15px; display: none; z-index: 50; pointer-events: auto;
         }
+        /* Touch Zone for Looking */
+        #mobile-look-zone {
+            position: absolute; top: 0; right: 0; width: 60%; height: 100%;
+            display: none; z-index: 40; pointer-events: auto;
+        }
         #mobile-pause-btn {
             position: absolute; top: 20px; left: 20px; width: 50px; height: 50px;
             background: rgba(255,255,255,0.2); border: 2px solid white; border-radius: 10px;
@@ -80,6 +85,7 @@
 
     <div id="gui"><h1 style="margin:0; font-size: 40px;">$1,000,000</h1></div>
     <div id="mobile-walk-ui"></div>
+    <div id="mobile-look-zone"></div>
 
     <script type="importmap">
         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -92,7 +98,19 @@
         const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
         // --- CORE FUNCTIONS ---
-        window.startGame = () => {
+        window.startGame = async () => {
+            // FULLSCREEN & LANDSCAPE FLIP FOR MOBILE
+            if (isMobile) {
+                try {
+                    if (document.documentElement.requestFullscreen) {
+                        await document.documentElement.requestFullscreen();
+                    }
+                    if (screen.orientation && screen.orientation.lock) {
+                        await screen.orientation.lock('landscape').catch(e => console.log("Orientation lock failed"));
+                    }
+                } catch (err) { console.log("Fullscreen request failed"); }
+            }
+
             document.getElementById('menu').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
             gun.visible = false; 
@@ -105,6 +123,7 @@
                     document.getElementById('gui').style.display='block'; 
                     if(isMobile) {
                         document.getElementById('mobile-walk-ui').style.display = 'block';
+                        document.getElementById('mobile-look-zone').style.display = 'block';
                         document.getElementById('mobile-pause-btn').style.display = 'flex';
                     }
                     window.resumeGame(); 
@@ -135,12 +154,43 @@
             sensitivity = document.getElementById('sens-slider').value * 0.0004; 
         };
 
-        // THE FIX: Listen for Esc key (Pointer Lock Change)
         document.addEventListener('pointerlockchange', () => {
-            if (!document.pointerLockElement && isPlaying) {
+            if (!document.pointerLockElement && isPlaying && !isMobile) {
                 window.pauseGame();
             }
         });
+
+        // --- MOBILE TOUCH CONTROLS ---
+        const walkPad = document.getElementById('mobile-walk-ui');
+        walkPad.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            walkPad.dataset.ox = t.clientX;
+            walkPad.dataset.oy = t.clientY;
+        });
+        walkPad.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const t = e.touches[0];
+            const dx = t.clientX - walkPad.dataset.ox;
+            const dy = t.clientY - walkPad.dataset.oy;
+            // Normalize movement - 40px drag is max speed
+            touchMove.x = Math.max(-1, Math.min(1, dx / 40));
+            touchMove.y = Math.max(-1, Math.min(1, dy / 40));
+        });
+        walkPad.addEventListener('touchend', () => { touchMove.x = 0; touchMove.y = 0; });
+
+        const lookZone = document.getElementById('mobile-look-zone');
+        lookZone.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            if (lookZone.dataset.lx) {
+                const moveX = t.clientX - lookZone.dataset.lx;
+                const moveY = t.clientY - lookZone.dataset.ly;
+                yaw -= moveX * 0.008;
+                pitch = Math.max(0.1, Math.min(1.4, pitch + moveY * 0.008));
+            }
+            lookZone.dataset.lx = t.clientX;
+            lookZone.dataset.ly = t.clientY;
+        });
+        lookZone.addEventListener('touchend', () => { delete lookZone.dataset.lx; delete lookZone.dataset.ly; });
 
         // --- THREE JS ENGINE ---
         const scene = new THREE.Scene();
@@ -161,7 +211,6 @@
         floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
         scene.add(floor);
 
-        // RESTORED BUILDINGS
         const buildings = [];
         for(let i=0; i<25; i++) {
             const h = 20 + Math.random() * 45;
@@ -170,7 +219,6 @@
             b.castShadow = true; scene.add(b); buildings.push(b);
         }
 
-        // KVATIA
         const kvatia = new THREE.Group();
         const animGroup = new THREE.Group();
         kvatia.add(animGroup);
@@ -223,6 +271,12 @@
             renderer.render(scene, camera); 
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
